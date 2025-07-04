@@ -1,0 +1,10 @@
+Satellite Name : sat_1
+Ground Station Name : gs_1
+Ground Station Position : Longitude and Latitude
+Start Time :
+Stop  Time : 
+* Note : Access : When Satellite Link with Ground Station at a time period
+
+   Access              Start Time (UTC)                  Stop Time (UTC)             Duration (sec)
+     1       Current time At the time simulation         (Since Start)             
+                 (D/M/Y Hour/Minute/Second)        (D/M/Y Hour/Minute/Second)                               

@@ -1,0 +1,209 @@
+ To Do : 
+ - Inspect 3D js (Sun Position) (Inspect sunCalculations.js)
+ - Check UI/UX (UTC offset)
+ - Fix 2D sun terminator
+
+
+To Do Later : 
+ - Fix Earth Texture, Close View, AtmosphericGlow , Add GLB for Ground Station and Satellite
+ - Possibly Add Accurate Sun in the background
+ - Fix 2D ground Station and Coverage
+ - Fix Camera in 3D
+ - Check TLE Propagation
+ - Add Link Budget
+ - Add Save function
+ - Fix UI/UX (Satellite Data Display)
+ - Finish 
+
+
+ To Do Now :
+ Priority 1 : 
+ - Add Link Budget
+ - Inspect 3D js (Sun Position) 
+ - Check 2D sun Position
+ - Check/Fix 2D ground Station and Coverage
+ - Check TLE Propagation
+ - Ground Station can be seen across Satellite Simulation /Independent of Satellite Simulation (Single/Constellation)
+ - Add Time Step (?)
+
+Priority 2 :
+ - Save function may have time period/duration??
+ - Fix 3D glb close view orientation
+ - Fix 3D mesh switch from close view to normal/reset view
+ - Upon Passing the Satellite would have Linked effect with the Ground Station
+ 
+ Priority 3 : 
+ - Add Accurate Sun in the background
+ - Fix UI/UX (Satellite Data Display,etc)
+
+
+Link Budget (With STK as reference):
+- Certain Time Period (How many Access)
+- Access where the ground Station could see the Satellite and Vice Versa
+
+
+- Simple Transmitter Model (On the Satellite):
+    - Frequency (GHz?)
+    - EIRP (dBW)
+    - Data Rate (Mb/sec)
+
+Sensor Type (Simple Conic)
+   - Basically Coverage Cone 
+   - Pointing Type  :  Fixed or Targeted
+
+
+From Chat GPT :
+  Link Budget Input
+    Satellite : 
+        - Transmit Power
+        - Transmit Antenna Gain
+        - Frequency
+        - Pointing angle offset (If applicable)
+        - Satellite Altitude
+        - Line-of-sight distance (dynamic, from sat-to-gs)
+
+    Ground Station :
+        - Receive antenna gain (dBi)
+        - System noise temperature (K)
+        - Ground Location (Latitude/Longitude)
+
+    Environmental/System :
+        - Path loss (Calculated using Friis Equation)
+        - Atmospheric loss
+        - Link margin requirement (e.g., 3 dB for safety)
+
+    Output Parameters
+        - C/N (Carrier to Noise) ratio at receiver
+        - Eb/N0 (bit energy to noise power) if digital
+        - Link Margin (dB)
+        - PASS/FAIL ---> Status of the Link
+        - Graph/Indicator of signal quality over time or range
+
+
+
+    Integration in app :
+       3D :
+         - Visualize signal beamwidth as a cone or beam between satellite and ground Station
+         - Color-coded link strength : Green (Strong), Yellow (Marginal) , Red (Fail)
+         - Animate link margin in real time as the satellite moves
+
+       2D : 
+         - Overlay coverage zones with signal strength
+         - Show line graphs for link budget over time or ground trace
+         - Indicate periods of connectivity and outages
+
+
+    Summary :
+       - Purpose : Evaluate if satellite-ground link is viable
+
+       To Do :
+       - When create new simulation (Single or Constellation), it will update the link budget file on sidebar
+       - Upon clicked, the users will update the satellite with Link Budget Parameters Input
+       - Add the ground Station (Must) (From Ground Station tab) as point of interest
+       - Could Add more than one ground Station
+       - Set the Start time and stop time 
+       - Then apply and Simulate
+       - When link success (The coverage will be green) , Fail : Red
+       - View the result (Output sidebar) based on 
+
+
+e.g :
+Satellite Name : sat_1
+Ground Station Name : gs_1
+Ground Station Position : Longitude and Latitude
+Start Time :
+Stop  Time : 
+* Note : Access : When Satellite Link with Ground Station at a time period
+
+   Access              Start Time (UTC)                  Stop Time (UTC)             Duration (sec)
+     1       Current time At the time simulation         (Since Start)             
+                 (D/M/Y Hour/Minute/Second)        (D/M/Y Hour/Minute/Second)                               
+
+
+
+                      
+Flow for view Report/Result :
+ - Resource Sidebar will contains both active satellite files (single or Constellation) and the ground station added to it
+ - At the output sidebar it will view active Satellite and Active ground satellite 
+
+ 
+ 
+ 
+
+//Sidebar
+Wait, for the select output or satellite button and Sidebar (Resource Menu, Output Menu) ,  what i'm trying to do is this :
+
+- Let's say users create a New File for a single Satellite named (Test_Single), since it's single, only 1 satellite active thus upon clicked, it shows the simulation properties and highlight
+- Users then create a New File for a single Satellite named (OneConnect), since it's single, only 1 satellite active thus upon clicked, it shows the simulation properties and highlight
+- Users then also create another File for Constellation named Test_Constellation, inside let's say there are 4 Satellite.
+-  Users then again create another File for Constellation named StarConnect, inside let's say there are 2 Satellite.
+
+Here is what happened :
+* Note :  The name of the satellite will be File Name_Satsatellite counter (For Constellation)
+- When users are in Output Tab all of The Active Satellite will be assigned To Each of their container, 
+
+Here is how It will look
+
+//Resource Tab
+Single Satellites
+   |--- Test_Single
+   |--- OneConnect 
+
+Constellation Satellites
+   |--- Test_Constellation
+   |--- StarConnect
+
+
+//Output Tab 
+Single Satellites : (Container)
+ |--- Test_Single  (Active Satellite Button)
+ |--- OneConnect  (Active Satellite Button)
+
+Constellation Satellites : (Container)
+ |--- Test_Constellation  (File Name)
+           |--- Test_Constellation_Sat1 (Active Satellite Button)
+           |--- Test_Constellation_Sat2 (Active Satellite Button)
+           |--- Test_Constellation_Sat3  (Active Satellite Button)
+           |--- Test_Constellation_Sat4   (Active Satellite Button)
+ |--- StarConnect   (File Name)
+           |--- StarConnect_Sat1  (Active Satellite Button)
+           |--- StarConnect_Sat2   (Active Satellite Button)
+
+  Selected Satellite Details:
+Name: 
+
+Altitude:  
+
+Orbital Period: 0.00 minutes
+
+Orbital Velocity: 587.01 km/s
+
+Position (x,y,z): (..., ...  ,... ) (scene units)
+Latitude :  ... °
+Longitude :   ... °  
+
+Inclination: ... ° 
+
+Eccentricity: ...  
+
+RAAN:  ... ° 
+
+Argument of Perigee: .... ° 
+
+True Anomaly: ... °
+
+//Action :
+- After Creating New Files, Resource Tab  will be Updated
+- In Output Tab, there will be containers for the Satellite Button
+- Upon Clicking the File in Resource Tab, the Container and the Satellite Button Will Show Up in Output Tab and user will be redirect to Output Tab upon clicking (Only for the File That is Clicked in the Resource Tab) 
+- Upon Clicking the Active Satellite Button "Selected Satellite Details" Will Show Up
+- The Same Goes with constellation or Single, however upon clicking the active satellite Button it will not Reset the simulation, just simple highlight the properties and the object in the visualization (satellite or Ground Station).
+- The reset/re rendering apply however when users switch/clicked different files (In Resource Tab)
+
+
+
+To do : 
+- Alternative (Instead of Reset upon clicking, just add Hide Simulation Button, Redo will Reset)
+- Fix Satellite Button in Output
+- Fix 2D 
+- Add Link Budget Analysis
