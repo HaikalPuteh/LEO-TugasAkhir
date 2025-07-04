@@ -758,7 +758,7 @@
         <div class="header-content">
             <h3>LEO Satellite Website</h3>
             <h1>Visual Simulation of LEO Orbit Satellite</h1>
-            <a href="<?php echo url('/app-main'); ?>" class="button">LAUNCH SIMULATION</a>
+            <a href="<?php echo url('/simulation'); ?>" class="button">LAUNCH SIMULATION</a>
         </div>
     </header>
 
@@ -844,7 +844,7 @@
             <p>
                 Fitur berbagi layar adalah inti dari pengalaman kolaborasi ini, memungkinkan pengguna untuk menampilkan presentasi, dokumen, atau bahkan aplikasi secara langsung kepada partisipan lain, menjadikan rapat virtual seefektif pertemuan tatap muka. Kemampuan untuk melihat siapa yang berbicara atau sedang aktif melalui indikator visual membantu menjaga alur diskusi tetap teratur, terutama dalam grup besar. Dengan penekanan pada fungsionalitas yang mulus dan penyampaian informasi yang efisien, platform ini bertujuan untuk merevolusi cara kerja tim berinteraksi, berdiskusi, dan mencapai tujuan bersama dalam lingkungan digital yang semakin terhubung.
             </p>
-            <a href="<?php echo url('/app-main'); ?>" class="button">LAUNCH SIMULATION</a>
+            <a href="<?php echo url('/simulation'); ?>" class="button">LAUNCH SIMULATION</a>
         </div>
     </section>
 
