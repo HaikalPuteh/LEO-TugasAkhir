@@ -100,14 +100,14 @@ export function getSunCoords(date) {
  */
 
 //-------------------------------------------------2D-------------------------------------------------------
-export function getSubsolarPoint(utcDate) {
+export function getSubsolarPoint(date) {
     //const d = toJulian(utcDate) - 2451545; // Days since J2000
 
-    const sunCoords = getSunCoords(utcDate); // Use the accurate getSunCoords
-    const GMST = getGMST(utcDate); // Greenwich Sidereal Time in radians
+    const sunCoords = getSunCoords(date); // Use the accurate getSunCoords
+    const GMST = getGMST(date); // Greenwich Sidereal Time in radians
 
-    // Subsolar longitude = GST - Right Ascension
-    let lonRad = (sunCoords.ra - GMST  ) % (2 * Math.PI);
+    // Subsolar longitude 
+    let lonRad = (sunCoords.ra + GMST ) % (2 * Math.PI);
     // Normalize longitude to [-π, π]
     if (lonRad > Math.PI) lonRad -= 2 * Math.PI;
     else if (lonRad < -Math.PI) lonRad += 2 * Math.PI;
@@ -116,7 +116,7 @@ export function getSubsolarPoint(utcDate) {
 
     return {
         Sun_dec: latRad * (180 / Math.PI),   // Latitude in degrees
-        Sun_ra: lonRad * (180 / Math.PI),   // Longitude in degrees
+        Sun_ra : -lonRad * (180 / Math.PI),   // Longitude in degrees
         latitudeRad: latRad,              // Latitude in radians
         longitudeRad: lonRad              // Longitude in radians
     };

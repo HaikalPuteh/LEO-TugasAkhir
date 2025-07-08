@@ -58,12 +58,8 @@ window.resizeCanvas2D = function() {
 
   canvas.width = w; canvas.height = h;
 
- // apply only the _initial_ GMST offset—
-   // don't re-fit on every frame:
-   const initialOffsetDeg = (window.initialEarthRotationOffset * 180 / Math.PI) % 360 ;// Ensure it's in [0, 360) range
-  // Create a new projection with the initial rotation offset
-   projection = d3.geoEquirectangular()
-    .rotate([initialOffsetDeg, 0])
+  // Create a new D3 projection
+  projection = d3.geoEquirectangular()
     .fitExtent([[0,0],[w,h]], { type: 'Sphere' });
  
   pathGenerator = d3.geoPath()
@@ -73,16 +69,14 @@ window.resizeCanvas2D = function() {
   if (window.is2DViewActive && window.texturesLoaded) draw2D();
 };
 
-
 window.addEventListener('resize', window.resizeCanvas2D);
 
 // --- Coordinate Transformation ---
 function positionToLatLon(pos) {
   const v = pos.clone();
   // total Earth rotation since epoch:
-  const θ = -window.initialEarthRotationOffset + window.totalSimulatedTime * window.EARTH_ANGULAR_VELOCITY_RAD_PER_SEC;
-  //const θ = window.getEarthRotationY ? window.getEarthRotationY() : 0
-
+  const θ = window.initialEarthRotationOffset + window.totalSimulatedTime * window.EARTH_ANGULAR_VELOCITY_RAD_PER_SEC;
+  
   // undo *all* of it, ECI→ECEF:
   v.applyAxisAngle(new THREE.Vector3(0,1,0), -θ);
 
@@ -95,7 +89,6 @@ function positionToLatLon(pos) {
     lon = ((lon % 360) + 360) % 360;
     if (lon > 180) lon -= 360;
   return { lat, lon };
-
 }
 
 // --- Drawing Helpers ---
@@ -133,38 +126,72 @@ function drawGroundTrack2D(sat) {
 }
 
 function drawCoverageArea2D(sat) {
-    const { lat, lon } = positionToLatLon(sat.mesh.position);
-    const φ = sat.coverageAngleRad;
-    if (φ <= 0) return;
-    const circle = d3.geoCircle().center([lon, lat]).radius(radToDeg(φ));
-    ctx.beginPath();
-    pathGenerator(circle());
-    ctx.fillStyle = 'rgba(136,136,136,0.05)'; ctx.fill();
-    ctx.strokeStyle = 'rgb(255,11,11)'; ctx.lineWidth = 1; ctx.stroke();
+  if (!pathGenerator) return;
+  const beamDeg = sat.params.beamwidth;
+  // skip zero or invalid beamwidth
+  if (beamDeg <= 0 || beamDeg >= 180) return;
+
+  const φ = sat.coverageAngleRad;
+  // require valid central angle
+  if (!φ || φ <= 0 || φ > Math.PI/2) return;
+
+  const radiusDeg = radToDeg(φ);
+  if (radiusDeg <= 0) return;
+
+  const { lat, lon } = positionToLatLon(sat.mesh.position);
+  const circle = d3.geoCircle()
+                   .center([lon, lat])
+                   .radius(radiusDeg)
+                   .precision(0.5);
+
+  ctx.beginPath();
+  pathGenerator(circle());
+  ctx.fillStyle = 'rgba(222, 222, 222, 0.41)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgb(255,11,11)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
 }
 
 function drawGroundStation2D(gs) {
     if (!pathGenerator) return;
-    const { latitude: lat, longitude: lon, minElevationAngle } = gs;
+    const minElev = gs.minElevationAngle;
+    // skip zero or negative elevation
+    if (minElev <= 0) return;
+
+    const lat = gs.latitude;
+    const lon = gs.longitude;
     const [x, y] = projection([lon, lat]);
+
     ctx.beginPath();
     ctx.arc(x, y, 3, 0, 2*Math.PI);
-    ctx.fillStyle = 'yellow'; ctx.fill();
-    const central = Math.PI/2 - degToRad(minElevationAngle);
-    if (central > 0) {
-        const circle = d3.geoCircle().center([lon, lat]).radius(radToDeg(central));
-        ctx.beginPath();
-        pathGenerator(circle());
-        ctx.fillStyle = 'rgba(255,0,255,0.05)'; ctx.fill();
-        ctx.strokeStyle = 'rgba(255,0,255,0.3)'; ctx.lineWidth = 1; ctx.stroke();
-    }
-}
+    ctx.fillStyle = 'yellow';
+    ctx.fill();
 
+    // central angle on Earth for GS coverage
+    const centralAng = Math.PI/2 - degToRad(minElev);
+    if (centralAng <= 0 || centralAng > Math.PI/2) return;
+
+    const radiusDeg = radToDeg(centralAng);
+    const circle = d3.geoCircle()
+                     .center([lon, lat])
+                     .radius(radiusDeg)
+                     .precision(0.5);
+
+    ctx.beginPath();
+    pathGenerator(circle());
+    ctx.fillStyle = 'rgba(255,0,255,0.05)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,0,255,0.3)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+}
 
 // --- Main Draw ---
 function draw2D() {
   if (!window.is2DViewActive || !window.texturesLoaded) return;
- 
+
+  // Clear the canvas
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
   // 1) draw the day side:
@@ -180,34 +207,29 @@ function draw2D() {
   tctx.save();
   tctx.globalCompositeOperation = 'destination-out';
 
-    // compute current subsolar point (in radians) at your sim time:
-     // update projection rotation per current GMST
-  const simDate = new Date(window.currentEpochUTC + window.totalSimulatedTime *1000);
+  const simDate = new Date(window.currentEpochUTC + window.totalSimulatedTime * 1000);
   const sub = getSubsolarPoint(simDate);
-
-  // convert to degrees:
   const centerLon = sub.Sun_ra;
   const centerLat = sub.Sun_dec;
 
-  // build & draw a 90°-radius terminator circle
   d3.geoPath()
     .projection(projection)
     .context(tctx)
     ( d3.geoCircle()
         .center([centerLon, centerLat])
         .radius(90)
-        .precision(0.5)()
+        .precision(0.1)()
     );
 
   tctx.fillStyle = 'black';
-  tctx.fill();  // erases the day side from the night layer
-  tctx.restore(); //
+  tctx.fill();
+  tctx.restore();
 
-  // 3) composite back onto your main canvas:
+  // composite back onto main canvas
   ctx.globalCompositeOperation = 'source-over';
   ctx.drawImage(tmp, 0,0);
 
-  // 4) finally, overlay satellites & ground stations
+  // overlay satellites & ground stations
   window.activeSatellites?.forEach(sat => {
     drawOrbitalPath2D(sat);
     drawGroundTrack2D(sat);
@@ -218,6 +240,58 @@ function draw2D() {
     ctx.fillStyle='red'; ctx.fill();
   });
   window.activeGroundStations?.forEach(gs => drawGroundStation2D(gs));
+
+
+  // 5) draw GS–Sat link lines when in‐beam *and* above horizon
+  {
+    // current Earth rotation angle
+    const θ = window.initialEarthRotationOffset
+              + window.totalSimulatedTime * window.EARTH_ANGULAR_VELOCITY_RAD_PER_SEC;
+    const yAxis = new THREE.Vector3(0,1,0);
+
+    window.activeGroundStations.forEach(gs => {
+      // GS in ECEF coords
+      const latR = degToRad(gs.latitude), lonR = degToRad(gs.longitude);
+      const gecef = new THREE.Vector3(
+        Math.cos(latR)*Math.cos(lonR),
+        Math.sin(latR),
+        Math.cos(latR)*Math.sin(lonR)
+      ).multiplyScalar(SCENE_EARTH_RADIUS);
+      // rotate to ECI
+      const geci = gecef.clone().applyAxisAngle(yAxis, θ);
+
+      window.activeSatellites.forEach(sat => {
+        const satPos = sat.mesh.position.clone(); // already in ECI
+        const halfBeam = degToRad(sat.params.beamwidth/2);
+
+        // 1) cone test
+        const satToGs = geci.clone().sub(satPos).normalize();
+        const nadir  = satPos.clone().negate().normalize();
+        const coneOK = Math.acos( THREE.MathUtils.clamp(nadir.dot(satToGs), -1,1) )
+                       <= halfBeam;
+
+        // 2) horizon test
+        const gDir    = geci.clone().normalize();
+        const sDir    = satPos.clone().normalize();
+        const central = Math.acos( THREE.MathUtils.clamp(gDir.dot(sDir), -1,1) );
+        const horizonOK = central <= sat.coverageAngleRad;
+
+        if (coneOK && horizonOK) {
+          // project both to screen
+          const [x1,y1] = projection([gs.longitude, gs.latitude]);
+          const { lat, lon } = positionToLatLon(satPos);
+          const [x2,y2] = projection([lon, lat]);
+
+          ctx.beginPath();
+          ctx.moveTo(x1, y1);
+          ctx.lineTo(x2, y2);
+          ctx.strokeStyle = 'yellow';
+          ctx.lineWidth   = 1;         
+          ctx.stroke();
+        }
+      });
+    });
+  }
 }
 
 // Expose
@@ -236,5 +310,8 @@ window.toggle2DSimulation = (on) => {
 
 // Redraw on epoch update
 window.addEventListener('epochUpdated', () => {
-    if (window.is2DViewActive && window.texturesLoaded) draw2D();
+  if (window.is2DViewActive && window.texturesLoaded) {
+    window.totalSimulatedTime = window.getSimulationCoreObjects().totalSimulatedTime;
+    draw2D();
+  }
 });

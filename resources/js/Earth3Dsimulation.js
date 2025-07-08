@@ -54,16 +54,21 @@ window.currentSpeedMultiplier = 1;
 window.EARTH_ANGULAR_VELOCITY_RAD_PER_SEC = EARTH_ANGULAR_VELOCITY_RAD_PER_SEC;
 window.is2DViewActive = false;
 
+
 // Expose these for use in simulation.blade.php
 window.calculateDerivedOrbitalParameters = calculateDerivedOrbitalParameters; // EXPOSED GLOBALLY
 window.EarthRadius = EarthRadius; // EXPOSED GLOBALLY
 window.DEG2RAD = DEG2RAD; // EXPOSED GLOBALLY
+window.SCENE_EARTH_RADIUS        = SCENE_EARTH_RADIUS; // EXPOSED GLOBALLY
 
 // Satellite model loading variables
 let satelliteModelLoaded = false;
 let globalSatelliteGLB = null;
 let lastAnimationFrameTime = performance.now();
 
+
+// Holds THREE.Line objects for every (gsId, satId) pair
+window.gsSatLinkLines = new Map(); //For Connection Analysis
 
 
 // Initialize the 3D scene
@@ -184,7 +189,7 @@ function init3DScene() {
 
                 // Smooth blend between day and night textures
                 // Adjust smoothstep range for a softer/harder terminator line
-                float blendFactor = smoothstep(-0.2, 0.2, lightIntensity);
+                float blendFactor = smoothstep(-0.1, 0.1, lightIntensity);
                 vec4 baseColor = mix(nightColor, dayColor, blendFactor);
 
                 // Specular lighting in world space
@@ -205,7 +210,7 @@ function init3DScene() {
     // Clouds mesh: Enhanced opacity and blending for better visualization
     cloudsMesh = new THREE.Mesh(earthGeometry, new THREE.MeshStandardMaterial({
         map: cloudsMap,
-        transparent: false, //Changed to true for opacity to work
+        //transparent: false, //Changed to true for opacity to work
         opacity: 0.2, // Increased opacity for better visibility
         blending: THREE.AdditiveBlending, // Makes clouds appear light and airy
         //alphaMap: cloudsAlphaMap, // Controls cloud transparency based on a separate texture
@@ -243,13 +248,7 @@ function init3DScene() {
     renderer.shadowMap.type = THREE.PCFSoftShadowMap; // default THREE.PCFShadowMap
 }
 
-/**
- * Updates the direction of the sunlight in the scene based on the current simulated time.
- * It uses the `getSunCoords` function to get the sun's J2000 ECI coordinates (RA and Dec)
- * and then converts them to the Three.js (Y-up) coordinate system.
- * The sun's position is fixed in the ECI scene frame, while the Earth rotates.
- * @param {number} simulatedTimeSeconds - The total simulated time in seconds.
- */
+
 function updateSunDirection(simTime) {
     const now = new Date(window.currentEpochUTC + simTime * 1000);
     const { ra, dec } = getSunCoords(now); // ra and dec are J2000 ECI coordinates
@@ -282,10 +281,6 @@ function updateSunDirection(simTime) {
 }
 
 
-/**
- * Draws the orbit path for a satellite.
- * @param {Satellite} satellite - The satellite object for which to draw the orbit.
- */
 function drawOrbitPath(satellite) {
     const e = satellite.params.eccentricity;
     const points = [];
@@ -293,6 +288,7 @@ function drawOrbitPath(satellite) {
 
     const tempRAAN = satellite.currentRAAN;
     const tempArgPerigee = satellite.params.argPerigeeRad;
+    //To Do Check : argPerigeeRad is in radians, from UI/UX
 
     for (let i = 0; i <= numPathPoints; i++) {
         const trueAnomaly_path = (i / numPathPoints) * 2 * Math.PI;
@@ -328,71 +324,69 @@ function drawOrbitPath(satellite) {
     scene.add(satellite.orbitLine); // Added to scene
 }
 
-/**
- * Updates the coverage cone visualization for a satellite.
- * @param {Satellite} satellite - The satellite object for which to update the cone.
- */
-function updateCoverageCone(satellite) {
-    // Dispose of the previous cone to avoid memory leaks and ghost objects
-    if (satellite.coverageCone) {
-        scene.remove(satellite.coverageCone); // Removed from scene
-        satellite.coverageCone.geometry.dispose();
-        satellite.coverageCone.material.dispose();
-        satellite.coverageCone = null;
-    }
 
-    const beamWidthDeg = satellite.params.beamwidth;
-    // If beamwidth is invalid or zero, do not draw a cone
-    if (beamWidthDeg <= 0 || beamWidthDeg >= 180) return;
+function updateCoverageCone(sat) {
+  // ——— cleanup ———
+  if (sat.coverageCone) {
+    scene.remove(sat.coverageCone);
+    sat.coverageCone.geometry.dispose();
+    sat.coverageCone.material.dispose();
+    sat.coverageCone = null;
+  }
+  if (sat.coverageRing) {
+    scene.remove(sat.coverageRing);
+    sat.coverageRing.geometry.dispose();
+    sat.coverageRing.material.dispose();
+    sat.coverageRing = null;
+  }
 
-    const earthRadiusScene = SCENE_EARTH_RADIUS;
-    const satPosition = satellite.mesh.position; // Satellite's position is now in ECI (relative to scene origin)
-    const d = satPosition.length();// Distance from Earth's center (0,0,0) to satellite
+  const beamDeg = sat.params.beamwidth;
+  if (beamDeg <= 0 || beamDeg >= 180) return;
 
-    // Calculate the half beam angle in radians
-    const β = DEG2RAD * (satellite.params.beamwidth/2); // Convert beamwidth to radians
+  const R = SCENE_EARTH_RADIUS;
+  const P = sat.mesh.position.clone();
+  const d = P.length();
+  const β = THREE.MathUtils.degToRad(beamDeg / 2);
 
-    // coneHeight is the actual altitude of the satellite above the Earth's surface in scene units
-    const coneHeight = d - earthRadiusScene ;
+  // —— law of sines φ = arcsin((d/R)·sinβ) – β, clamped by horizon ——  
+  let φ = Math.asin(Math.min(1, (d / R) * Math.sin(β))) - β;
+  const φ_horizon = Math.acos(R / d);
+  if (φ < 0 || φ > φ_horizon) {
+    // either beam too narrow or aims past horizon → no coverage
+    if (β < φ_horizon) return;
+    φ = φ_horizon;
+  }
+  sat.coverageAngleRad = φ;
 
-    // Add coverage angle calculation for 2D
-    //const φ     = Math.acos( (earthR/d) / Math.cos(β) );
-    const φ = Math.acos(earthRadiusScene/d) + β;
-    satellite.coverageAngleRad = Math.min(φ, Math.PI/2);
+  // —— cone dims ——  
+  const height     = d - R * Math.cos(φ);
+  const coneRadius = R * Math.sin(φ);
+  if (height <= 0 || coneRadius <= 0) return;
 
-    // Prevent drawing infinitesimally small or non-existent cones
-    if (coneHeight <= 0.0001) return;
+  // —— build the cone ——  
+  const coneGeo = new THREE.ConeGeometry(coneRadius, height, 256, 1, true);
+  // keep the apex at the sat by translating down half the height
+  coneGeo.translate(0, -height/2, 0);
 
-    const coneRadius = Math.tan(β) * coneHeight;
-    if (coneRadius <= 0.0001) return;
+  const coneMat = new THREE.MeshBasicMaterial({
+    color:       0x00ffff,
+    transparent: true,
+    opacity:     0.2,
+    side:        THREE.DoubleSide
+  });
+  const cone = new THREE.Mesh(coneGeo, coneMat);
+  cone.position.copy(P);
 
-    const coneGeometry = new THREE.ConeGeometry(coneRadius, coneHeight, 32);
-    coneGeometry.translate(0, -coneHeight / 2, 0);
+  // point +Y → nadir
+  const nadir = P.clone().negate().normalize();
+  const q     = new THREE.Quaternion()
+    .setFromUnitVectors(new THREE.Vector3(0, -1, 0), nadir);
+  cone.setRotationFromQuaternion(q);
 
-    // Create the material for the cone.
-    const coneMaterial = new THREE.MeshBasicMaterial({
-        color: 0x00ff00, // Green color for visibility
-        transparent: true,
-        opacity: 0.2,
-        side: THREE.DoubleSide // Important: Render both sides to see it from any angle
-    });
-
-    satellite.coverageCone = new THREE.Mesh(coneGeometry, coneMaterial);
-    satellite.coverageCone.position.copy(satPosition);
-    // Nadir direction is towards the center of the Earth from the satellite
-    const nadirPointOnEarth = satPosition.clone().normalize().multiplyScalar(earthRadiusScene);
-    const satToNadirDirection = nadirPointOnEarth.clone().sub(satPosition).normalize();
-    // Align the cone's Y-axis (which is usually its central axis) with the nadir direction
-    const rotationQuaternion = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), satToNadirDirection.negate()); // Negate because cone points up by default
-    satellite.coverageCone.setRotationFromQuaternion(rotationQuaternion);
-    scene.add(satellite.coverageCone); // Added to scene
+  scene.add(cone);
+  sat.coverageCone = cone;
 }
 
-
-/**
- * Updates the nadir line visualization for a satellite.
- * @param {Satellite} satellite - The satellite object for which to update the nadir line.
- */
 function updateNadirLine(satellite) {
     if (satellite.nadirLine) {
         scene.remove(satellite.nadirLine);
@@ -426,9 +420,65 @@ function updateNadirLine(satellite) {
 }
 
 
-/**
- * Satellite class to manage satellite objects in the simulation.
- */
+function updateGsSatLinkLines() {
+  // Remove any stale lines first
+  window.gsSatLinkLines.forEach((line, key) => {
+    scene.remove(line);
+    line.geometry.dispose();
+    line.material.dispose();
+  });
+  window.gsSatLinkLines.clear();
+
+  // Temp vectors
+  const gsPos = new THREE.Vector3();
+  const satPos = new THREE.Vector3();
+  const satToGs = new THREE.Vector3();
+  const nadirDir = new THREE.Vector3();
+
+  window.activeGroundStations.forEach(gs => {
+    gs.mesh.getWorldPosition(gsPos);
+
+    window.activeSatellites.forEach(sat => {
+      sat.mesh.getWorldPosition(satPos);
+
+      const key = `${gs.id}|${sat.id}`;
+      const halfBeam = THREE.MathUtils.degToRad(sat.params.beamwidth / 2);
+
+      // 1) is GS inside the beam cone?
+      satToGs.copy(gsPos).sub(satPos).normalize();
+      nadirDir.copy(satPos).negate().normalize();
+      const coneOK = THREE.MathUtils.acosSafe(nadirDir.dot(satToGs)) <= halfBeam;
+
+      // 2) is GS above the local horizon?
+      const gsDir = gsPos.clone().normalize();
+      const satDir = satPos.clone().normalize();
+      const central = THREE.MathUtils.acosSafe(gsDir.dot(satDir));
+      const horizonOK = central <= sat.coverageAngleRad;
+
+      if (coneOK && horizonOK) {
+        // create or update the line
+        let line = window.gsSatLinkLines.get(key);
+        if (!line) {
+          line = new THREE.Line(
+            new THREE.BufferGeometry().setFromPoints([gsPos, satPos]),
+            new THREE.LineBasicMaterial({ color: 0xffff00, linewidth: 1 })
+          );
+          scene.add(line);
+          window.gsSatLinkLines.set(key, line);
+        } else {
+          line.geometry.setFromPoints([gsPos, satPos]);
+        }
+      }
+    });
+  });
+}
+
+// Helper to clamp dot into [-1,1] before acos
+THREE.MathUtils.acosSafe = function(x) {
+  return Math.acos(THREE.MathUtils.clamp(x, -1, 1));
+};
+
+
 class Satellite {
     constructor(id, name, params, initialMeanAnomaly, initialRAAN, initialEpochUTC, tleLine1 = null, tleLine2 = null) {
         this.id = id;
@@ -559,7 +609,7 @@ class Satellite {
 
         // Convert current ECI position to latitude and longitude for ground track (2D)
         // 1) Compute the total rotation (initial GMST + elapsed spin)
-        const θ = -window.initialEarthRotationOffset + window.totalSimulatedTime * window.EARTH_ANGULAR_VELOCITY_RAD_PER_SEC;
+        const θ = window.initialEarthRotationOffset + window.totalSimulatedTime * window.EARTH_ANGULAR_VELOCITY_RAD_PER_SEC;
 
         // 2) “Undo” it in one go (ECI→ECEF)
         const ecef = this.mesh.position.clone().applyAxisAngle(new THREE.Vector3(0,1,0), -θ);
@@ -621,25 +671,48 @@ class Satellite {
      * Disposes of the satellite's meshes and lines to free up memory.
      */
     dispose() {
-        if (this.sphereMesh) { scene.remove(this.sphereMesh); this.sphereMesh.geometry.dispose(); this.sphereMesh.material.dispose(); }
-        if (this.glbMesh) {
-            scene.remove(this.glbMesh);
-            this.glbMesh.traverse((child) => {
-                if (child.isMesh) {
-                    child.geometry.dispose();
-                    if (child.material.isMaterial) child.material.dispose();
-                    else if (Array.isArray(child.material)) child.material.forEach(mat => mat.dispose());
-                }
-            });
-        }
-        if (this.orbitLine) { scene.remove(this.orbitLine); this.orbitLine.geometry.dispose(); this.orbitLine.material.dispose(); }
-        if (this.coverageCone) { scene.remove(this.coverageCone); this.coverageCone.geometry.dispose(); this.coverageCone.material.dispose(); }
-        if (this.nadirLine) { scene.remove(this.nadirLine); this.nadirLine.geometry.dispose(); this.nadirLine.material.dispose(); }
-        if (this._labelElement) {
-            this._labelElement.remove();
-            this._labelElement = null;
-        }
+    if (this.sphereMesh) { 
+      scene.remove(this.sphereMesh); 
+      this.sphereMesh.geometry.dispose(); 
+      this.sphereMesh.material.dispose(); 
     }
+    if (this.glbMesh) {
+      scene.remove(this.glbMesh);
+      this.glbMesh.traverse((child) => {
+        if (child.isMesh) {
+          child.geometry.dispose();
+          if (child.material.isMaterial) child.material.dispose();
+          else if (Array.isArray(child.material)) child.material.forEach(mat => mat.dispose());
+        }
+      });
+    }
+    if (this.orbitLine) { 
+      scene.remove(this.orbitLine); 
+      this.orbitLine.geometry.dispose(); 
+      this.orbitLine.material.dispose(); 
+    }
+    if (this.coverageCone) { 
+      scene.remove(this.coverageCone); 
+      this.coverageCone.geometry.dispose(); 
+      this.coverageCone.material.dispose(); 
+    }
+    if (this.nadirLine) { 
+      scene.remove(this.nadirLine); 
+      this.nadirLine.geometry.dispose(); 
+      this.nadirLine.material.dispose(); 
+    }
+
+    // 5) Remove the CSS2D label object _and_ its DOM element
+    if (this.labelObject) {
+        this.mesh.remove(this.labelObject);    // remove the CSS2DObject
+        this.labelObject = null;
+    }
+
+    if (this._labelElement) {
+      this._labelElement.remove();
+      this._labelElement = null;
+    }
+  }
 
 
     updateParametersFromCurrentPosition(newParams, newEpochUTC) {
@@ -686,7 +759,7 @@ class Satellite {
     }
 }
 
-
+//--------------------------------------------- Start of the Label Creation---------------------------------
 function createSatelliteLabel(sat) {
   const div = document.createElement('div');
   div.className = 'satellite-label';
@@ -696,6 +769,7 @@ function createSatelliteLabel(sat) {
   div.style.whiteSpace = 'nowrap';
   const label = new CSS2DObject(div);
   label.position.set(0, 0.02, 0);
+  sat.labelObject = label;       // ← keep a reference
   sat.mesh.add(label);
   sat._labelElement = div;
 }
@@ -796,6 +870,20 @@ window.highlightGroundStationInScene = function(id) {
     });
 };
 
+function createGroundStationLabel(gs) {
+    const div = document.createElement('div');
+    div.className = 'satellite-label'; // Re-use satellite-label class for styling
+    div.textContent = gs.name;
+    div.style.color = 'white';
+    div.style.fontSize = '12px';
+    div.style.whiteSpace = 'nowrap';
+    const label = new CSS2DObject(div);
+    label.position.set(0, 0.02, 0); // Offset slightly above the ground station
+    gs.mesh.add(label);
+    gs._labelElement = div;
+}
+
+//------------------------------------------- End Of Label Creation ---------------------------------
 
 /**
  * GroundStation class to manage ground station objects in the simulation.
@@ -865,7 +953,7 @@ class GroundStation {
         }
 
         const minElevRad = this.minElevationAngle * DEG2RAD;
-
+        if (minElevRad <= 0) return;
         if (minElevRad >= Math.PI / 2) return;
         const GsConeHalfAngle = Math.PI / 2 - minElevRad;
 
@@ -883,7 +971,7 @@ class GroundStation {
 
         // Translate the cone so that its apex is at the ground station's position.
         // It moves apex to (0,0,0) if original apex was at (0, height, 0) by translating -height/2.
-        coneGeometry.translate(0, -visualConeHeight / 2, 0);
+        coneGeometry.translate(0, visualConeHeight / 2, 0);
 
         // Define the material for the cone
         const coneMaterial = new THREE.MeshBasicMaterial({
@@ -907,35 +995,36 @@ class GroundStation {
      * Disposes of the ground station's meshes and lines to free up memory.
      */
     dispose() {
-        if (this.mesh) {
-            earthGroup.remove(this.mesh);
-            this.mesh.geometry.dispose();
-            this.mesh.material.dispose();
-        }
-        if (this.coverageCone) {
-            earthGroup.remove(this.coverageCone);
-            this.coverageCone.geometry.dispose();
-            this.coverageCone.material.dispose();
-        }
-        if (this._labelElement) {
-            this._labelElement.remove();
-            this._labelElement = null;
-        }
+    // 1) Remove the station mesh
+    if (this.mesh) {
+      earthGroup.remove(this.mesh);
+      this.mesh.geometry.dispose();
+      this.mesh.material.dispose();
+      this.mesh = null;
     }
+
+    // 2) Remove the coverage cone
+    if (this.coverageCone) {
+      earthGroup.remove(this.coverageCone);
+      this.coverageCone.geometry.dispose();
+      this.coverageCone.material.dispose();
+      this.coverageCone = null;
+    }
+
+    // 3) Remove the CSS2DObject label
+    if (this.labelObject) {
+      this.mesh?.remove(this.labelObject);  // in case you kept a reference
+      this.labelObject = null;
+    }
+
+    // 4) Remove its <div> from the DOM
+    if (this._labelElement) {
+      this._labelElement.remove();
+      this._labelElement = null;
+    }
+  }
 }
 
-function createGroundStationLabel(gs) {
-    const div = document.createElement('div');
-    div.className = 'satellite-label'; // Re-use satellite-label class for styling
-    div.textContent = gs.name;
-    div.style.color = 'white';
-    div.style.fontSize = '12px';
-    div.style.whiteSpace = 'nowrap';
-    const label = new THREE.CSS2DObject(div);
-    label.position.set(0, 0.02, 0); // Offset slightly above the ground station
-    gs.mesh.add(label);
-    gs._labelElement = div;
-}
 
 
 /**
@@ -1026,6 +1115,14 @@ window.clearSimulationScene = function() {
     if (typeof window.updateAnimationDisplay === 'function') {
         window.updateAnimationDisplay(); // Update UI after clearing
     }
+
+    window.gsSatLinkLines.forEach(line => {
+        scene.remove(line);
+        line.geometry.dispose();
+        line.material.dispose();
+    });
+    window.gsSatLinkLines.clear();
+
     // Clear any highlights in the scene
     window.highlightSatelliteInScene(null);
     window.highlightGroundStationInScene(null);
@@ -1033,8 +1130,7 @@ window.clearSimulationScene = function() {
 
 //--------------------------------Generate a new simulation view based on input----------------------------------------
 
-// Function to add or update a satellite in the scene with a specific position.
-// This function can be called from an HTML form submission or other UI interaction
+// Data Passed From New Single Satellite Form
 window.addOrUpdateSatelliteInScene = function(satelliteData) {
     const uniqueId = satelliteData.id || satelliteData.fileName;
     if (!uniqueId) {
@@ -1080,7 +1176,7 @@ window.addOrUpdateSatelliteInScene = function(satelliteData) {
         existingSat.name = satelliteData.name || uniqueId;
     }else{
             const newSat = new Satellite(
-              uniqueId,
+            uniqueId,
             satelliteData.name || uniqueId,
             params,
             /* initialMeanAnomaly */  
@@ -1149,262 +1245,217 @@ window.addOrUpdateGroundStationInScene = function(gsData) {
     window.dispatchEvent(new Event('epochUpdated'));
     }
 };
-//initializeSatelliteLabels()
 
-//Function to view/Render a simulation based on provided data
+
+
+// Data Passed From New Constellation Satellite Form
 window.viewSimulation = function(data) {
-    window.clearSimulationScene(); // Clear any existing objects
-    
-    // Set epoch for the simulation and reset simulated time
+    // --- 1) Clear scene & reset epoch ---
+    window.clearSimulationScene();
+
     if (data.tleLine1 && data.tleLine2) {
         try {
             const parsedTle = parseTle(data.tleLine1, data.tleLine2);
-            window.currentEpochUTC = parsedTle.epochTimestamp;
-            window.totalSimulatedTime = 0; // Reset simulated time for new TLE epoch
+            window.currentEpochUTC    = parsedTle.epochTimestamp;
+            window.totalSimulatedTime = 0;
         } catch (err) {
-            console.error("Invalid TLE provided. Falling back to current real-world time.", err);
-            window.currentEpochUTC = new Date().getTime();
+            console.error("Invalid TLE, falling back to now:", err);
+            window.currentEpochUTC    = Date.now();
             window.totalSimulatedTime = 0;
         }
     } else if (typeof data.utcTimestamp === 'number') {
-        window.currentEpochUTC = data.utcTimestamp;
+        window.currentEpochUTC    = data.utcTimestamp;
         window.totalSimulatedTime = 0;
     } else {
-        // Fallback: if no specific epoch provided, use current real-world time as epoch
-        window.currentEpochUTC = new Date().getTime();
+        window.currentEpochUTC    = Date.now();
         window.totalSimulatedTime = 0;
     }
 
-    // IMPORTANT: Recalculate initial Earth rotation offset based on the new epoch
+    // recalc Earth rotation, sun, initial render
     window.initialEarthRotationOffset = getGMST(new Date(window.currentEpochUTC));
-
-
-    // Update sun direction and render immediately after epoch changes
     updateSunDirection(window.totalSimulatedTime);
     renderer.render(scene, camera);
 
-    if (data.fileType === 'single' || data.fileType === 'tle') { // Handle both single and TLE as single satellites
+    // --- 2) Single/TLE branch ---
+    if (data.fileType === 'single' || data.fileType === 'tle') {
         window.addOrUpdateSatelliteInScene({
-            id: data.fileName,
-            name: data.fileName,
-            altitude: data.altitude,
-            inclination: data.inclination,
-            eccentricity: data.eccentricity,
-            raan: data.raan,
-            argumentOfPerigee: data.argumentOfPerigee,
-            trueAnomaly: data.trueAnomaly,
-            utcTimestamp: window.currentEpochUTC, // Pass the effective epoch
-            beamwidth: data.beamwidth,
-            tleLine1: data.tleLine1,
-            tleLine2: data.tleLine2
+            id:               data.fileName,
+            name:             data.fileName,
+            altitude:         data.altitude,
+            inclination:      data.inclination,
+            eccentricity:     data.eccentricity,
+            raan:             data.raan,
+            argumentOfPerigee:data.argumentOfPerigee,
+            trueAnomaly:      data.trueAnomaly,
+            utcTimestamp:     window.currentEpochUTC,
+            beamwidth:        data.beamwidth,
+            tleLine1:         data.tleLine1,
+            tleLine2:         data.tleLine2
         });
-        window.isAnimating = false; // Keep animation paused initially for single sats
+        window.isAnimating = false;
+
+        // ensure fileOutputs and output tab know about it
+        data.satellites = [ data.fileName ];
+        window.fileOutputs.set(data.fileName, data);
+        if (window.saveFilesToLocalStorage) window.saveFilesToLocalStorage();
+        window.updateOutputTabForFile(data.fileName, data.fileType);
+
+    // --- 3) Constellation / LinkBudget branch ---
     } else if (data.fileType === 'constellation' || data.fileType === 'linkBudget') {
-        const constellationParams = data;
-        let baseSatelliteParams;
+        const params    = data;
+        const satList   = [];
+        let baseParams;
+
         if (data.fileType === 'constellation') {
-            baseSatelliteParams = {
-                altitude: constellationParams.altitude,
-                inclination: constellationParams.inclination,
-                eccentricity: constellationParams.eccentricity,
-                raan: constellationParams.raan,
-                argumentOfPerigee: constellationParams.argumentOfPerigee,
-                trueAnomaly: constellationParams.trueAnomaly,
-                utcTimestamp: window.currentEpochUTC, // Pass the effective epoch
-                beamwidth: constellationParams.beamwidth,
-                tleLine1: constellationParams.tleLine1,
-                tleLine2: constellationParams.tleLine2
+            baseParams = {
+                altitude:         params.altitude,
+                inclination:      params.inclination,
+                eccentricity:     params.eccentricity,
+                raan:             params.raan,
+                argumentOfPerigee:params.argumentOfPerigee,
+                trueAnomaly:      params.trueAnomaly,
+                utcTimestamp:     window.currentEpochUTC,
+                beamwidth:        params.beamwidth,
+                tleLine1:         params.tleLine1,
+                tleLine2:         params.tleLine2
             };
-        }else { // linkBudget
-            baseSatelliteParams = {
-                altitude: constellationParams.orbitHeight,
-                inclination: constellationParams.orbitInclination,
-                eccentricity: 0.0, // Link budget constellations often assume circular orbits
-                raan: 0,
-                argumentOfPerigee: 0,
-                trueAnomaly: 0,
-                utcTimestamp: window.currentEpochUTC, // Pass the effective epoch
-                beamwidth: 0, // No beamwidth specified for linkBudget
-                tleLine1: constellationParams.tleLine1,
-                tleLine2: constellationParams.tleLine2
+        } else {
+            // linkBudget uses different orbit fields
+            baseParams = {
+                altitude:         params.orbitHeight,
+                inclination:      params.orbitInclination,
+                eccentricity:     0,
+                raan:             0,
+                argumentOfPerigee:0,
+                trueAnomaly:      0,
+                utcTimestamp:     window.currentEpochUTC,
+                beamwidth:        0,
+                tleLine1:         params.tleLine1,
+                tleLine2:         params.tleLine2
             };
         }
 
-        let satelliteCounter = 0; // Counter for satellite names
-        window.selectedSatelliteId = null; // Reset selected satellite (Added for clarity/Remove if not needed)
+        // TRAIN-style constellation
+        if (params.constellationType === 'train') {
+            const N         = params.numSatellites;
+            const sepType   = params.separationType;
+            const sepValue  = params.separationValue;
+            const backward  = (params.trainDirection === 'backward');
+            const derived   = calculateDerivedOrbitalParameters(baseParams.altitude, baseParams.eccentricity, EarthRadius);
+            const periodSec = derived.orbitalPeriod;
+            let spacingRad = 0;
 
-        if (constellationParams.constellationType === 'train') {
-            const numSatellites = constellationParams.numSatellites;
-            const satelliteIds = []; // Array to store satellite IDs
-            const separationType = constellationParams.separationType;
-            const separationValue = constellationParams.separationValue;
-            const separationDirection = constellationParams.separationDirection || 'Forward';
-
-            let initialMeanAnomalyBase = E_to_M(TrueAnomaly_to_E(baseSatelliteParams.trueAnomaly * DEG2RAD, baseSatelliteParams.eccentricity), baseSatelliteParams.eccentricity);
-            const derivedOrbitalParams = calculateDerivedOrbitalParameters(baseSatelliteParams.altitude, baseSatelliteParams.eccentricity, EarthRadius);
-            const orbitalPeriodSeconds = derivedOrbitalParams.orbitalPeriod;
-            let meanAnomalySpacing = 0;
-            if (separationType === "meanAnomaly") {
-                meanAnomalySpacing = separationValue * DEG2RAD;
-            } else if (separationType === "time") {
-                const meanMotionRadPerSec = (2 * Math.PI) / orbitalPeriodSeconds;
-                meanAnomalySpacing = meanMotionRadPerSec * separationValue;
+            if (sepType === 'meanAnomaly') {
+                spacingRad = sepValue * DEG2RAD;
+            } else {
+                spacingRad = ((2*Math.PI)/periodSec)*sepValue;
             }
+            if (backward) spacingRad *= -1;
 
-            if (separationDirection === "Backward") {
-                meanAnomalySpacing *= -1;
-            }
+            // base M
+            let M0 = E_to_M(
+                      TrueAnomaly_to_E(baseParams.trueAnomaly*DEG2RAD, baseParams.eccentricity),
+                      baseParams.eccentricity
+                     );
 
-            for (let i = 0; i < numSatellites; i++) {
-                satelliteCounter++;
-                // Calculate the initial mean anomaly for each satellite
-                // Ensure it wraps around 0 to 2*PI
-                let currentSatelliteInitialMA = (initialMeanAnomalyBase + (i * meanAnomalySpacing));
-                currentSatelliteInitialMA = currentSatelliteInitialMA % (2 * Math.PI);
-                if (currentSatelliteInitialMA < 0) currentSatelliteInitialMA += 2 * Math.PI;
+            for (let i = 0; i < N; i++) {
+                const M_i = ((M0 + i*spacingRad) % (2*Math.PI) + 2*Math.PI) % (2*Math.PI);
+                const TA  = E_to_TrueAnomaly(solveKepler(M_i, baseParams.eccentricity), baseParams.eccentricity) * (180/Math.PI);
+                const satId   = `${data.fileName}-${Date.now()}-${i+1}`;
+                const satName = `${data.fileName}_Sat${i+1}`;
 
-                // Create a unique ID and name for the satellite
-                const satId = `${constellationParams.fileName || constellationParams.name}-${Date.now()}-${satelliteCounter}`;
-                const satName = `${constellationParams.fileName || constellationParams.name}_Sat${satelliteCounter}`;
-
-                // Create the satellite data object
-                const satData = { //
-                    id: satId,
-                    name: satName,
-                    altitude: baseSatelliteParams.altitude,
-                    inclination: baseSatelliteParams.inclination,
-                    eccentricity: baseSatelliteParams.eccentricity,
-                    raan: baseSatelliteParams.raan,
-                    argumentOfPerigee: baseSatelliteParams.argumentOfPerigee,
-                    trueAnomaly: E_to_TrueAnomaly(solveKepler(currentSatelliteInitialMA, baseSatelliteParams.eccentricity), baseSatelliteParams.eccentricity) * (180 / Math.PI),
-                    utcTimestamp: window.currentEpochUTC, // Use the effective epoch
-                    beamwidth: baseSatelliteParams.beamwidth,
-                    fileType: 'single',
-                    tleLine1: null, // Do not propagate TLEs to train constellation satellites
-                    tleLine2: null
-                };
-                window.addOrUpdateSatelliteInScene(satData);
-                satelliteIds.push(satId); // Collect the ID
+                window.addOrUpdateSatelliteInScene({
+                    id:               satId,
+                    name:             satName,
+                    altitude:         baseParams.altitude,
+                    inclination:      baseParams.inclination,
+                    eccentricity:     baseParams.eccentricity,
+                    raan:             baseParams.raan,
+                    argumentOfPerigee:baseParams.argumentOfPerigee,
+                    trueAnomaly:      TA,
+                    utcTimestamp:     window.currentEpochUTC,
+                    beamwidth:        baseParams.beamwidth,
+                    fileType:         data.fileType
+                });
+                satList.push(satId);
                 window.isAnimating = false;
             }
 
-            // Update fileOutputs with the satellite IDs
-            if (typeof window.fileOutputs !== 'undefined') {
-                const updatedData = { ...constellationParams, satellites: satelliteIds };
-                window.fileOutputs.set(constellationParams.fileName || constellationParams.name, updatedData);
-                if (typeof window.saveFilesToLocalStorage === 'function') {
-                    window.saveFilesToLocalStorage();
-                }
-            }
-        } else if (constellationParams.constellationType === 'walker') {
-            // Ensure parameters are integers for counts and floats for angles
-            const P = parseInt(constellationParams.numPlanes) || 1; // Number of planes
-            const S = parseInt(constellationParams.satellitesPerPlane) || 1; // Satellites per plane
-            const F = parseInt(constellationParams.phasingFactor) || 0; // Phasing factor (relative spacing between satellites in adjacent planes)
-            const RAAN_spread_deg = parseFloat(constellationParams.raanSpread) || 360; // Total RAAN spread
-            const satelliteIds = []; // Array to store satellite IDs
-            const totalSatellites = P * S;
-            if (totalSatellites === 0) {
-                console.warn("No satellites to create for Walker constellation (P*S=0).");
-                // Ensure scene is rendered even if no satellites
-                const core3D = window.getSimulationCoreObjects();
-                if (core3D.renderer) core3D.renderer.render(core3D.scene, core3D.camera);
-                if (typeof window.updateAnimationDisplay === 'function') {
-                    window.updateAnimationDisplay();
-                }
-                return;
-            }
+        // WALKER-style constellation
+        } else if (params.constellationType === 'walker') {
+            const P     = parseInt(params.numPlanes,      10) || 1;
+            const S     = parseInt(params.satellitesPerPlane,10) || 1;
+            const F     = parseInt(params.phasingFactor,  10) || 0;
+            const RAANdeg = parseFloat(params.raanSpread) || 360;
+            const total = P*S;
 
-            const RAAN_spacing_per_plane_rad = (RAAN_spread_deg / P) * DEG2RAD;
-            const MA_spacing_in_plane_rad = (2 * Math.PI) / S;
-            const MA_phase_shift_between_planes_rad = (F * (2 * Math.PI)) / totalSatellites;
+            const RAANstep = (RAANdeg/P)*DEG2RAD;
+            const MAstep   = (2*Math.PI)/S;
+            const PHstep   = (F*(2*Math.PI))/total;
 
-            const initialMeanAnomaly_seed_rad = E_to_M(TrueAnomaly_to_E(baseSatelliteParams.trueAnomaly * DEG2RAD, baseSatelliteParams.eccentricity), baseSatelliteParams.eccentricity);
+            let M0 = E_to_M(
+                      TrueAnomaly_to_E(baseParams.trueAnomaly*DEG2RAD, baseParams.eccentricity),
+                      baseParams.eccentricity
+                     );
 
+            let counter = 0;
             for (let p = 0; p < P; p++) {
-                const currentPlaneRAAN_rad = (baseSatelliteParams.raan * DEG2RAD + (p * RAAN_spacing_per_plane_rad));
-                // Normalize RAAN to 0 to 2*PI
-                const normalizedRAAN_rad = currentPlaneRAAN_rad % (2 * Math.PI);
-                const finalRAAN_rad = normalizedRAAN_rad < 0 ? normalizedRAAN_rad + 2 * Math.PI : normalizedRAAN_rad;
+                const RAANp = ((baseParams.raan*DEG2RAD + p*RAANstep)%(2*Math.PI)+2*Math.PI)%(2*Math.PI);
 
                 for (let s = 0; s < S; s++) {
-                    satelliteCounter++;
+                    counter++;
+                    let M_i = M0 + s*MAstep + p*PHstep;
+                    M_i = ((M_i)%(2*Math.PI)+2*Math.PI)%(2*Math.PI);
 
-                    let currentSatelliteInitialMA = initialMeanAnomaly_seed_rad;
-                    // Spacing within plane
-                    currentSatelliteInitialMA = (currentSatelliteInitialMA + (s * MA_spacing_in_plane_rad));
-                    // Phase shift between planes
-                    currentSatelliteInitialMA = (currentSatelliteInitialMA + (p * MA_phase_shift_between_planes_rad));
+                    const TA  = E_to_TrueAnomaly(solveKepler(M_i, baseParams.eccentricity), baseParams.eccentricity)*(180/Math.PI);
+                    const satId   = `${data.fileName}-${Date.now()}-${p+1}-${s+1}`;
+                    const satName = `${data.fileName}_Sat${p+1}_${s+1}`;
 
-                    // Normalize MA to 0 to 2*PI
-                    const normalizedMA_rad = currentSatelliteInitialMA % (2 * Math.PI);
-                    const finalMA_rad = normalizedMA_rad < 0 ? normalizedMA_rad + 2 * Math.PI : normalizedMA_rad;
-
-                    // Create a unique ID for the satellite
-                    const satId = `${constellationParams.fileName || constellationParams.name}-${Date.now()}-${satelliteCounter}`;
-                    const satName = `${constellationParams.fileName || constellationParams.name}_Sat${satelliteCounter}`;
-
-                    // Create the satellite data object
-                    const satData = {
-                        id: satId,
-                        name: satName,
-                        altitude: baseSatelliteParams.altitude,
-                        inclination: baseSatelliteParams.inclination,
-                        eccentricity: baseSatelliteParams.eccentricity,
-                        raan: finalRAAN_rad * (180 / Math.PI), // Convert back to degrees for satData
-                        argumentOfPerigee: baseSatelliteParams.argumentOfPerigee,
-                        trueAnomaly: E_to_TrueAnomaly(solveKepler(finalMA_rad, baseSatelliteParams.eccentricity), baseSatelliteParams.eccentricity) * (180 / Math.PI), // Convert back to degrees
-                        utcTimestamp: window.currentEpochUTC, // Use the effective epoch
-                        beamwidth: baseSatelliteParams.beamwidth,
-                        fileType: 'single',
-                        // Pass TLEs to individual satellites if present in base params
-                        tleLine1: null, // Do not propagate TLEs to walker constellation satellites
-                        tleLine2: null
-                    };
-                    window.addOrUpdateSatelliteInScene(satData);
-                    satelliteIds.push(satId); // Collect the ID
+                    window.addOrUpdateSatelliteInScene({
+                        id:               satId,
+                        name:             satName,
+                        altitude:         baseParams.altitude,
+                        inclination:      baseParams.inclination,
+                        eccentricity:     baseParams.eccentricity,
+                        raan:             RAANp*(180/Math.PI),
+                        argumentOfPerigee:baseParams.argumentOfPerigee,
+                        trueAnomaly:      TA,
+                        utcTimestamp:     window.currentEpochUTC,
+                        beamwidth:        baseParams.beamwidth,
+                        fileType:         data.fileType
+                    });
+                    satList.push(satId);
                     window.isAnimating = false;
                 }
             }
-
-            // Update fileOutputs with the satellite IDs
-            if (typeof window.fileOutputs !== 'undefined') {
-                const updatedData = { ...constellationParams, satellites: satelliteIds };
-                window.fileOutputs.set(constellationParams.fileName || constellationParams.name, updatedData);
-                if (typeof window.saveFilesToLocalStorage === 'function') {
-                    window.saveFilesToLocalStorage();
-                }
-            }
         }
+        // --- write back & refresh once ---
+        params.satellites = satList;
+        window.fileOutputs.set(data.fileName, params);
+        if (window.saveFilesToLocalStorage) window.saveFilesToLocalStorage();
+        window.updateOutputTabForFile(data.fileName, data.fileType);
+
+    // --- 4) Ground station branch ---
     } else if (data.fileType === 'groundStation') {
         window.addOrUpdateGroundStationInScene({
-            id: data.name, // Using name as ID for ground stations
-            name: data.name,
-            latitude: data.latitude,
-            longitude: data.longitude,
-            minElevationAngle: data.minElevationAngle
+            id:               data.name,
+            name:             data.name,
+            latitude:         data.latitude,
+            longitude:        data.longitude,
+            minElevationAngle:data.minElevationAngle
         });
-        // If only a ground station is loaded and no satellites, center camera on it
         if (window.activeSatellites.size === 0) {
             const gs = window.activeGroundStations.get(data.name);
-            if (gs) {
-                camera.position.set(gs.mesh.position.x * 2, gs.mesh.position.y * 2, gs.mesh.position.z * 2 + 1);
-                controls.target.copy(gs.mesh.position);
-                controls.update();
-            }
+            camera.position.set(gs.mesh.position.x*2, gs.mesh.position.y*2, gs.mesh.position.z*2+1);
+            controls.target.copy(gs.mesh.position);
+            controls.update();
         }
     }
-    // Ensure the scene is rendered after loading new objects
+    // final render & UI update
     const core3D = window.getSimulationCoreObjects();
-    if (core3D.renderer) {
-        core3D.renderer.render(core3D.scene, core3D.camera);
-    }
-    // Update UI after adding objects
-    if (typeof window.updateAnimationDisplay === 'function') {
-        window.updateAnimationDisplay();
-    }
+    if (core3D.renderer) core3D.renderer.render(core3D.scene, core3D.camera);
+    if (window.updateAnimationDisplay) window.updateAnimationDisplay();
 };
-
 
 window.removeObjectFromScene = function(idToRemove, type) {
     if (type === 'satellite') {
@@ -1412,6 +1463,17 @@ window.removeObjectFromScene = function(idToRemove, type) {
         if (sat) {
             sat.dispose();
             window.activeSatellites.delete(idToRemove);
+            //— remove from our saved fileOutputs entry —
+            window.fileOutputs.forEach((fileData, fileName) => {
+            if (fileData.satellites && fileData.satellites.includes(idToRemove)) {
+                fileData.satellites = fileData.satellites.filter(id => id !== idToRemove);
+                window.fileOutputs.set(fileName, fileData);
+                if (typeof window.saveFilesToLocalStorage === 'function') {
+                window.saveFilesToLocalStorage();
+                }
+                window.updateOutputTabForFile(fileName, fileData.fileType);
+            }
+            });
             if (window.selectedSatelliteId === idToRemove) {
                 window.selectedSatelliteId = null;
                 // If selected sat removed, reset camera to Earth center view
@@ -1488,9 +1550,6 @@ window.getSimulationCoreObjects = function() {
 
 //Reload the 3D simulation state from sidebar or saved state
 window.load3DSimulationState = function() {
-    // Note: When loading state, if a TLE was originally used, it should be re-applied
-    // rather than trying to reconstruct Keplerian parameters, as TLEs are more precise.
-
     const satellitesToRecreate = new Map(window.activeSatellites);
     window.activeSatellites.clear();
     satellitesToRecreate.forEach(satData => {
@@ -1534,10 +1593,55 @@ window.load3DSimulationState = function() {
 };
 
 
-/**
- * Main animation loop for the simulation.
- * It updates Earth's rotation, satellite positions, and other visual elements.
- */
+
+// Utility functions for satellite data calculations Display
+// Convert radians → formatted degrees
+function toDeg(rad) {
+  return (rad * 180/Math.PI).toFixed(2);
+}
+
+// Compute a satellite’s altitude (in km) from its scene‐unit radius
+function computeAltitude(sat) {
+  // EarthRadius (imported) is km per scene‐unit
+  const kmPerUnit = EarthRadius;
+  return ((sat.mesh.position.length() * kmPerUnit) - kmPerUnit).toFixed(2);
+}
+
+// If you still need these globally (e.g. your Blade inline code), expose them:
+window.toDeg = toDeg;
+window.computeAltitude = computeAltitude;
+
+
+function updateSatellitePopup() {
+    if (!window.activeSatellitePopup) return;
+    const { element, satId } = window.activeSatellitePopup;
+    const sat = window.activeSatellites.get(satId);
+    if (!sat) {
+        element.remove();
+        window.activeSatellitePopup = null;
+        return;
+    }
+    // Recompute derived parameters
+    const { orbitalPeriod, orbitalVelocity } = calculateDerivedOrbitalParameters(
+        sat.params.semiMajorAxis - SCENE_EARTH_RADIUS,
+        sat.params.eccentricity
+    );
+    // Update each span with current data
+    element.querySelector('.altitude').textContent = computeAltitude(sat);
+    element.querySelector('.inclination').textContent = toDeg(sat.params.inclinationRad);
+    element.querySelector('.latitude').textContent = sat.latitudeDeg.toFixed(2);
+    element.querySelector('.longitude').textContent = sat.longitudeDeg.toFixed(2);
+    element.querySelector('.raan').textContent = toDeg(sat.currentRAAN);
+    element.querySelector('.orbitalPeriod').textContent = (orbitalPeriod / 60).toFixed(2);
+    element.querySelector('.orbitalVelocity').textContent = orbitalVelocity.toFixed(2);
+    element.querySelector('.beamwidth').textContent = sat.params.beamwidth;
+    element.querySelector('.trueAnomaly').textContent = toDeg(sat.currentTrueAnomaly);
+    element.querySelector('.eccentricity').textContent = sat.params.eccentricity.toFixed(4);
+    element.querySelector('.argPerigee').textContent = toDeg(sat.params.argPerigeeRad);
+}
+window.updateSatellitePopup = updateSatellitePopup;
+
+// Initialize the 3D scene and start the animation loop
 function animate() { // timestamp is passed by requestAnimationFrame
     requestAnimationFrame(animate);
     const currentTime = performance.now();
@@ -1580,14 +1684,20 @@ function animate() { // timestamp is passed by requestAnimationFrame
     if (core3D.is2DViewActive && typeof window.draw2D === 'function') {
         window.draw2D();
     }
-
+    
+    // Update the satellite pop-up
+    if (window.updateSatellitePopup) window.updateSatellitePopup();
+    
     // --- UI callbacks ---
     if (typeof window.updateAnimationDisplay === 'function') {
         window.updateAnimationDisplay();
     }
-    if (core3D.selectedSatelliteId && typeof window.updateSatelliteDataDisplay === 'function') {
-        window.updateSatelliteDataDisplay();
-    }
+    // if (core3D.selectedSatelliteId && typeof window.updateSatelliteDataDisplay === 'function') {
+    //     window.updateSatelliteDataDisplay();
+    // }
+
+    updateGsSatLinkLines();// For Connection Analysis
+
 
   // Camera/controls logic for close view
     if (core3D.closeViewEnabled && core3D.selectedSatelliteId) {

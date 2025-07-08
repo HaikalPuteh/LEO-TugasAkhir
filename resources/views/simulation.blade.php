@@ -8,14 +8,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
-    {{-- Assuming Vite setup is correct and points to resources/js/Earth3Dsimulation.js --}}
     @vite([
-        'resources/js/Earth2Dsimulation.js', // Uncomment if you implement 2D view and related logic
-        'resources/js/Earth3Dsimulation.js' // Your primary Three.js simulation logic
+        'resources/js/Earth2Dsimulation.js',
+        'resources/js/Earth3Dsimulation.js'
     ])
     <style>
-
-        /*keseluruhan tapi bagian footer*/
         body {
             font-family: 'Rubik', sans-serif;
             background-color: #16214a;
@@ -24,12 +21,10 @@
             padding: 0;
         }
 
-        /*bagian header*/
         header {
             background-color: #00274e !important;
         }
 
-        /*bagian navigation menu*/
         .nav-link {
             font-size: 14px;
             padding: 6px 12px;
@@ -40,9 +35,9 @@
             background-color: #001f4d;
             border-radius: 4px;
         }
-
-        /*bagian toolbar dan settings*/
-        .contextmenu, .settings-contextmenu {
+     
+        /* Navigation Menu Styles (Top Left)*/
+        .custom-contextmenu, .settings-contextmenu {
             display: none;
             position: absolute;
             background-color: #00274e;
@@ -56,12 +51,18 @@
             font-size: 16px;
         }
 
-        .settings-contextmenu {
-            top: 100%;
-            right: 0;
-            transform: translateX(-1%);
+        .custom-contextmenu  li,
+        .settings-contextmenu li {
+            padding: 2px 10px;
+            cursor: pointer;
+            white-space: nowrap;
         }
-        /*Play,Pause,etc*/
+
+        .contextmenu li:hover, .settings-contextmenu li:hover {
+            background-color: rgb(200, 200, 200);
+        }
+
+        /* Toolbar Styles (Top Right)*/
         .btn-toolbar {
             background-color: #00274e;
             border-radius: 4px;
@@ -77,49 +78,7 @@
             background-color: #001f4d;
         }
 
-        .btn-toolbar .btn.pressed {
-            background-color: #001a33; /* A darker shade of #003366 */
-            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2); /* Optional: add an inset shadow for a pressed look */
-        }
-
-        /* Add this to your <style> section */
-        .btn-group-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 5px;
-            margin-bottom: 10px; /* Provides spacing between groups */
-        }
-
-        .contextmenu li,
-        .settings-contextmenu li {
-            padding: 2px 10px;
-            cursor: pointer;
-            white-space: nowrap;
-        }
-
-        .menu-item:hover .contextmenu, .settings-icon:hover .settings-contextmenu {
-            display: block;
-        }
-
-        .contextmenu li:hover, .settings-contextmenu li:hover {
-            background-color:rgb(200, 200, 200);
-        }
-
-        .settings-icon button {
-            background-color: transparent;
-            border: 1px solid #003366;
-            border-radius: 4px;
-            padding: 6px 10px;
-            transition: background-color 0.3s, border-color 0.3s;
-        }
-
-        .settings-icon button:hover {
-            background-color: #001f4d;
-            border-color: #001f4d;
-            color: white;
-        }
-
-        /*bagian sidebar*/
+        /* Sidebar Styles */
         .sidebar {
             width: 250px;
             background: #001b36;
@@ -132,8 +91,7 @@
             flex-grow: 1;
             overflow-y: auto;
         }
-
-        /*bagian sidebar (resource menu)*/
+        /* Resource Tab Styles */
         #resource-menu ul {
             padding-left: 0;
             margin-top: 0;
@@ -145,14 +103,11 @@
             list-style: none;
             font-weight: normal;
             padding-left: 1rem;
-            /* Flexbox removed, as edit button will not be next to it */
         }
 
-        /* Khusus untuk "Satellite" */
         #satellite-resource-list {
             padding-left: 0.5rem;
         }
-
 
         #single-files-list,
         #constellation-files-list {
@@ -173,34 +128,28 @@
             background-color: #e9ecef;
         }
 
-        /*bagian sidebar (output menu)*/
+        .sidebar-icon {
+            width: 16px;
+            text-align: center;
+            margin-right: 6px;
+            color: #9fb8d7;
+        }
+
         #output-menu ul {
             list-style: none;
             padding-left: 0.5rem;
+            color: rgb(255, 255, 255);
         }
 
         #output-menu ul li {
             list-style: none;
             font-weight: normal;
+            cursor: pointer;
+            color: rgb(255, 255, 255);
         }
 
-        .output-file-name {
-            list-style: disc !important;
-            padding-left: 1rem;
-            font-weight: normal;
-        }
-
-        /* Style for the action buttons container in output sidebar */
-        .output-actions {
-            display: flex; /* Changed from display: flex to center items */
-            justify-content: center; /* This centers the items horizontally */
-            align-items: center; /* Align items vertically if they had different heights, good practice */
-            padding-left: 0; /* Remove left padding to allow full centering */
-            /* You might want to adjust padding or margin-bottom/top for vertical spacing */
-        }
-
-        .output-actions .btn {
-            margin: 0 5px; /* Adds 5px margin to the left and right of each button */
+        #output-menu ul li:hover {
+            background-color: #e9ecef;
         }
 
         .content {
@@ -209,88 +158,72 @@
             position: relative;
         }
 
-        /*bagian bumi*/
-        /*3D view*/
         #earth-container {
             width: 100%;
-            /* height: 615px;*/
-            height: 100%; /* Or whatever height you define for your 3D view */
-            position: relative; /* THIS IS IMPORTANT: Makes it the positioning context for absolute children */
-            /* ... other #earth-container styles ... */
+            height: 100%;
+            position: relative;
         }
-        
+
         #earth2D-container {
             width: 100%;
-            /* height: 615px;*/ /* Or whatever height you define for your 2D view */
-            height: 100%; /* THIS IS IMPORTANT: Makes it the positioning context for absolute children */
-            display: none; /* Initially hidden, will be toggled by JavaScript */    
-            /* ... other #earth-container styles ... */
+            height: 100%;
+            display: none;
         }
 
         .hidden {
             display: none;
         }
 
+        /* Sidebar Tab Styles */
         .nav-tabs .nav-link {
             flex: 1;
             text-align: center;
             font-size: 14px;
             padding: 8px 0;
-            background-color: #001b36;
+            background-color: #00274e ;
         }
 
         .nav-tabs .nav-link.active {
             background-color: rgb(33, 92, 151);
-            color: #ffffff;
+            color:#ffffff;
         }
 
-        #animationStatusDisplay {
-            position: absolute; /* This makes it position relative to its closest positioned ancestor */
-            top: 20px;           /* Distance from the top of #earth-container */
-            right: 20px;         /* Distance from the right of #earth-container */
-            background-color: rgba(0, 0, 0, 0.6); /* Semi-transparent dark background */
-            color: white;        /* White text color */
-            padding: 8px 15px;   /* Padding inside the box */
-            border-radius: 8px; /* Rounded corners */
-            font-size: 14px;     /* Slightly smaller font for compactness */
-            z-index: 10;         /* Ensure it's above the 3D scene */
-            backdrop-filter: blur(5px); /* Optional: Adds a subtle blur effect behind the text */
-            -webkit-backdrop-filter: blur(5px); /* For Safari compatibility */
-            display: flex;       /* Use flexbox for easy alignment of children */
-            align-items: center; /* Vertically center items */
-            gap: 8px;            /* Space between status and speed */
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); /* Soft shadow for depth */
-        }
-
+        #animationStatusDisplay,
         #animationStatusDisplay2D {
-            position: absolute; /* This makes it position relative to its closest positioned ancestor */
-            top: 20px;           /* Distance from the top of #earth-container */
-            right: 20px;         /* Distance from the right of #earth-container */
-            background-color: rgba(0, 0, 0, 0.6); /* Semi-transparent dark background */
-            color: white;        /* White text color */
-            padding: 8px 15px;   /* Padding inside the box */
-            border-radius: 8px; /* Rounded corners */
-            font-size: 14px;     /* Slightly smaller font for compactness */
-            z-index: 10;         /* Ensure it's above the 3D scene */
-            backdrop-filter: blur(5px); /* Optional: Adds a subtle blur effect behind the text */
-            -webkit-backdrop-filter: blur(5px); /* For Safari compatibility */
-            display: flex;       /* Use flexbox for easy alignment of children */
-            align-items: center; /* Vertically center items */
-            gap: 8px;            /* Space between status and speed */
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); /* Soft shadow for depth */
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: rgba(0, 0, 0, 0.6);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            z-index: 10;
+            backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
         }
 
-        /* Optional: Style for the text within the display */
-        #animationStatusDisplay span {
-            font-weight: 500; /* Medium font weight for values */
+        #simulationClockDisplay,
+        #simulationClockDisplay2D {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background-color: rgba(0, 0, 0, 0.6);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            z-index: 10;
+            backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
         }
 
-        /* Optional: Style for the text within the display */
-        #animationStatusDisplay2D span {
-            font-weight: 500; /* Medium font weight for values */
-        }
-
-        /*bagian zoom +-*/
         .zoom-controls {
             position: absolute;
             bottom: 20px;
@@ -312,54 +245,30 @@
             opacity: 0.8;
             transition: opacity 0.3s ease;
         }
-        
-        /* Simulation Clock Display (overlay on 3D view) - NEW */
-        #simulationClockDisplay {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            background-color: rgba(0, 0, 0, 0.6);
-            color: white;
-            padding: 8px 15px;
-            border-radius: 8px;
-            font-size: 14px;
-            z-index: 10;
-            backdrop-filter: blur(5px);
-            -webkit-backdrop-filter: blur(5px);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-        }
 
-        #simulationClockDisplay2D {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            background-color: rgba(0, 0, 0, 0.6);
-            color: white;
-            padding: 8px 15px;
-            border-radius: 8px;
-            font-size: 14px;
-            z-index: 10;
-            backdrop-filter: blur(5px);
-            -webkit-backdrop-filter: blur(5px);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-        }
         .zoom-button:hover {
             opacity: 1;
             background-color: rgba(0, 31, 77, 0.8);
         }
 
-        /*bagian notifikasi peringatan*/
+        .custom-popup {
+            position: absolute;
+            background: white;
+            border: 1px solid #ccc;
+            padding: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            z-index: 10000;
+            width: 250px;
+            cursor: move;
+            color: black;
+            border-radius: 5px;
+        }
+
         .custom-alert-content {
-        background-color: white;
-        color: black;
-        border-radius: 8px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            background-color: white;
+            color: black;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
         }
 
         .custom-alert-header {
@@ -393,7 +302,7 @@
             padding: 15px;
             font-size: 1em;
             color: #333;
-            text-align: center;;
+            text-align: center;
         }
 
         .custom-alert-footer {
@@ -401,111 +310,8 @@
             padding: 10px 20px;
             justify-content: center;
         }
-
-        .custom-alert-ok-btn:hover {
-            background-color: #0056b3;
-            border-color: #0056b3;
-        }
-
-        /* Styles for input validation feedback */
-        .text-danger {
-            color: #dc3545; /* Red color for error messages */
-        }
-        .is-invalid {
-            border-color: #dc3545 !important; /* Red border for invalid input */
-        }
-        /* Styles for satellite list buttons */
-        #satelliteButtonsContainer {
-            margin-bottom: 15px;
-            border: 1px solid #eee;
-            padding: 5px;
-            border-radius: 5px;
-            max-height: 150px; /* Limit height and make scrollable */
-            overflow-y: auto;
-            background-color: #fcfcfc;
-        }
-
-        .satellite-button {
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 3px;
-            padding: 5px 10px;
-            margin: 3px;
-            cursor: pointer;
-            font-size: 0.85em;
-            transition: background-color 0.2s ease;
-            white-space: nowrap; /* Prevent text wrapping */
-        }
-
-        .satellite-button:hover {
-            background-color: #0056b3;
-        }
-
-        .satellite-button.active {
-            background-color: #28a745; /* Green for active */
-            box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
-        }
-
-        .satellite-label {
-            text-shadow: 0 0 3px rgba(0,0,0,0.7);
-            transform: translateX(-50%);
-        }
-
-        /* New styles for constellation toggle and members */
-        .constellation-group {
-            border: 1px solid #003366;
-            border-radius: 5px;
-            margin-bottom: 5px;
-            overflow: hidden; /* Ensures rounded corners apply to content */
-        }
-
-        .constellation-toggle {
-            background-color: #004080 !important; /* Darker blue for constellation main button */
-            width: 100%;
-            text-align: left;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 12px;
-            font-size: 0.9em;
-        }
-
-        .constellation-toggle:hover {
-            background-color: #0056b3 !important;
-        }
-
-        .constellation-members-list {
-            background-color: #00274e; /* Background for the dropdown list */
-            padding: 5px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 5px;
-            border-top: 1px solid #003366;
-        }
-
-        .constellation-members-list .satellite-button {
-            background-color: #0056b3; /* Slightly different color for members */
-            padding: 4px 8px;
-            font-size: 0.8em;
-        }
-
-        .constellation-members-list .satellite-button:hover {
-            background-color: #007bff;
-        }
-
-        .toggle-icon {
-            margin-left: 10px;
-            transition: transform 0.2s ease;
-        }
-
-        .constellation-members-list.hidden {
-            display: none;
-        }
-
     </style>
 </head>
-
 
 <body>
     <header class="d-flex justify-content-between align-items-center p-3 text-white">
@@ -515,23 +321,23 @@
                 <ul class="nav">
                     @foreach(['New', 'View','Save'] as $menu)
                         <li class="nav-item dropdown position-relative menu-item">
-                            <span class="nav-link dropdown-toggle" role="button">{{ $menu }}</span>
-                            <ul class="contextmenu">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">{{ $menu }}</a>
+                            <ul class="dropdown-menu">
                                 @switch($menu)
                                     @case('New')
-                                        <li id="newSingleMenuBtn">Single</li>
-                                        <li id="newConstellationMenuBtn">Constellation</li>
-                                        <li id="newGroundStationMenuBtn">Ground Station</li>
-                                        <li id="newLinkBudgetMenuBtn">Link Budget</li>
-                                        @break
+                                    <li><a class="dropdown-item" href="#" id="newSingleMenuBtn">Single</a></li>
+                                    <li><a class="dropdown-item" href="#" id="newConstellationMenuBtn">Constellation</a></li>
+                                    <li><a class="dropdown-item" href="#" id="newGroundStationMenuBtn">Ground Station</a></li>
+                                    <li><a class="dropdown-item" href="#" id="newLinkBudgetMenuBtn">Link Budget</a></li>
+                                    @break
                                     @case('View')
-                                        <li id="resetViewBtn">Reset View</li>
-                                        <li id="closeViewButton">Close View</li>
-                                        <li id="toggle2DViewBtn">2D View</li>
+                                        <li><a class="dropdown-item" href="#" id="resetViewBtn">Reset View</a></li>
+                                        <li><a class="dropdown-item" href="#" id="closeViewButton">Close View</a></li>
+                                        <li> <a class="dropdown-item" href="#" id="toggle2DViewBtn">2D View</a></li>
                                         @break
                                     @case('Save')
-                                        <li id="showSavePopupBtn">Save TLE</li>
-                                        <li id="loadTleBtn">Load TLE</li>
+                                        <li><a class="dropdown-item" href="#" id="showSavePopupBtn">Save</a></li>
+                                        <li><a class="dropdown-item" href="#" id="loadTleBtn">Load TLE</a></li>
                                         @break
                                 @endswitch
                             </ul>
@@ -540,7 +346,7 @@
                 </ul>
             </nav>
         </div>
-        <div style="width: 200px;"></div> {{-- Placeholder for spacing --}}
+        <div style="width: 200px;"></div>
         <div class="d-flex align-items-center gap-2">
             <div class="btn-toolbar" role="toolbar">
                 <button type="button" class="btn btn-sm" id="startButton" title="Play Animation"><i class="fas fa-play"></i></button>
@@ -562,51 +368,44 @@
                 <button class="nav-link active" id="resourceTabBtn">Resource</button>
                 <button class="nav-link" id="outputTabBtn">Output</button>
             </div>
+
             <div id="resource-menu" class="menu-content flex-grow-1">
                 <ul>
-                    <li id="satellite-resource-list">Satellite
+                    <li id="satellite-resource-list">
+                        <i class="fas fa-satellite sidebar-icon"></i>Satellites
                         <ul>
-                            <li id="single-files-list">Single Files
+                            <li id="single-files-list">
+                                <i class="fas fa-folder sidebar-icon"></i> Single Files
                                 <ul></ul>
                             </li>
-                            <li id="constellation-files-list">Constellation Files
+                            <li id="constellation-files-list">
+                                <i class="fas fa-folder sidebar-icon"></i>Constellation Files
                                 <ul></ul>
                             </li>
                         </ul>
                     </li>
-                    <li id="ground-station-resource-list">Ground Station
+                    <li id="ground-station-resource-list">
+                        <i class="fas fa-satellite-dish sidebar-icon"></i>Ground Station
                         <ul></ul>
                     </li>
-                    <li id="link-budget-resource-list">Link Budget Analysis
+                    <li id="link-budget-resource-list">
+                        <i class="fas fa-tower-broadcast sidebar-icon"></i>Link Budget
                         <ul></ul>
                     </li>
                 </ul>
             </div>
-            
-        <div id="output-menu" class="menu-content hidden flex-grow-1">
-            {{-- ADDED: Container for Satellite List and Data Display --}}
-        <div id="satelliteListDisplay" style="padding: 10px; border-top: 1px solid #ccc; margin-top: 10px; background-color: #f8f9fa;">
-        <h6 class="text-dark">Active Satellites:</h6>
-        <div id="satelliteButtonsContainer" style="display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px;">
-        </div>
-        <div id="satelliteDataDisplay" style="display: none; background-color: #e9ecef; padding: 10px; border-radius: 5px; color: black; font-size: 0.9em;">
-            <h6 class="text-dark">Selected Satellite Details:</h6>
-            <p><strong>Name:</strong> <span id="dataName"></span></p>
-            <p><strong>Altitude:</strong> <span id="dataAltitude"></span> Km</p>
-            <p><strong>Orbital Period:</strong> <span id="dataOrbitalPeriod"></span> minutes</p>
-            <p><strong>Orbital Velocity:</strong> <span id="dataOrbitalVelocity"></span> km/s</p>
-            <p><strong>Position (x,y,z):</strong> <span id="dataPosition"></span> (scene units)</p>
-            <p><strong>Latitude:</strong> <span id="dataLatitude"></span>°</p>
-            <p><strong>Longitude:</strong> <span id="dataLongitude"></span>°</p>
-            <p><strong>Inclination:</strong> <span id="dataInclination"></span>°</p>
-            <p><strong>Eccentricity:</strong> <span id="dataEccentricity"></span></p>
-            <p><strong>RAAN:</strong> <span id="dataRaan"></span>°</p>
-            <p><strong>Argument of Perigee:</strong> <span id="dataArgPerigee"></span>°</p>
-            <p><strong>True Anomaly:</strong> <span id="dataTrueAnomaly"></span>°</p>
+
+            <div id="output-menu" class="menu-content hidden flex-grow-1">
+                <div id="reports-section">
+                    <h6 class="text-dark">Reports</h6>
+                    <ul id="reports-list"></ul>
+                </div>
+                <div id="satellite-link-section">
+                    <h6 class="text-dark">Satellite Link</h6>
+                    <button id="create-link-report-btn" class="btn btn-sm btn-primary">Create Link Report</button>
+                    <ul id="link-reports-list"></ul>
+                </div>
             </div>
-            </div>
-            <div id="output-actions-container"></div>
-        </div>
         </aside>
 
         <main class="content flex-grow-1 bg-white">
@@ -615,16 +414,16 @@
                     Status: <span id="animationState">Paused</span> | Speed: <span id="animationSpeed">1x</span>
                 </div>
                 <div id="simulationClockDisplay" class="text-white-50 small">
-                    Current Time: <span id="currentSimulatedTime"></span> 
+                    Current Time: <span id="currentSimulatedTime"></span>
                 </div>
             </div>
             <div id="earth2D-container" style="display: none;">
-                <canvas id = map-2D-canvas></canvas>
+                <canvas id="map-2D-canvas"></canvas>
                 <div id="animationStatusDisplay2D" class="text-white-50 small">
                     Status: <span id="animationState2D">Paused</span> | Speed: <span id="animationSpeed2D">1x</span>
                 </div>
                 <div id="simulationClockDisplay2D" class="text-white-50 small">
-                    Current Time: <span id="currentSimulatedTime2D"></span> 
+                    Current Time: <span id="currentSimulatedTime2D"></span>
                 </div>
             </div>
             <div class="zoom-controls">
@@ -634,7 +433,6 @@
         </main>
     </div>
 
-    {{-- Modals for Input/Output --}}
     <div class="modal fade" id="fileModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content text-dark">
@@ -642,9 +440,7 @@
                     <h5 class="modal-title" id="fileModalLabel"></h5>
                     <button type="button" class="btn-close" id="modalCloseBtn"></button>
                 </div>
-                <div class="modal-body" id="fileModalBody">
-                    {{-- Dynamic content injected here --}}
-                </div>
+                <div class="modal-body" id="fileModalBody"></div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" id="modalFooterCloseBtn">Close</button>
                     <button type="button" class="btn btn-primary" id="fileModalResetBtn" style="display: none;">Reset</button>
@@ -661,9 +457,7 @@
                     <h5 class="modal-title">Link Budget Analysis Output</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body" id="linkBudgetOutputBody">
-                    {{-- Dynamic content injected here --}}
-                </div>
+                <div class="modal-body" id="linkBudgetOutputBody"></div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                     <button type="button" class="btn btn-primary" id="applyLinkBudgetPreviewBtn">Apply</button>
@@ -685,298 +479,731 @@
         </div>
     </div>
 
-    {{-- Popups for Save and others (currently hidden) --}}
-    <div class="custom-popup hidden" id="optionsPopup">
-        <ul class="list-unstyled bg-white shadow rounded p-2" style="min-width: 150px; position: absolute; z-index: 1060;">
-        </ul>
-    </div>
-
-    <div class="custom-popup hidden" id="networkConfigPopup">
-        <ul class="list-unstyled bg-white shadow rounded p-2" style="min-width: 200px; position: absolute; z-index: 1060;">
-        </ul>
-    </div>
-
-    <div class="custom-popup hidden" id="documentationPopup">
-        <div class="bg-white shadow rounded p-3" style="min-width: 250px; position: absolute; z-index: 1060;">
-        </div>
-    </div>
-
-    <div class="custom-popup hidden" id="aboutPopup">
-        <div class="bg-white shadow rounded p-3" style="min-width: 200px; position: absolute; z-index: 1060;">
-        </div>
-    </div>
-
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script> {{-- GSAP for animations --}}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.min.js"></script>
+
     <script type="module">
+        import { DEG2RAD, EarthRadius, MU_EARTH, SCENE_EARTH_RADIUS } from "{{ Vite::asset('resources/js/parametersimulation.js') }}";
+        import { solveKepler, E_to_TrueAnomaly, TrueAnomaly_to_E, E_to_M, calculateDerivedOrbitalParameters } from "{{ Vite::asset('resources/js/orbitalCalculation.js') }}";
+        import { calculateLinkBudget } from "{{ Vite::asset('resources/js/linkBudgetCalculations.js') }}";
+        // import * as THREE from "three";
+        // window.THREE = THREE; // so your inline checkVisibility can see it
 
-import { DEG2RAD, EarthRadius, MU_EARTH } from "{{ Vite::asset('resources/js/parametersimulation.js') }}";
-import { solveKepler, E_to_TrueAnomaly, TrueAnomaly_to_E, E_to_M, calculateDerivedOrbitalParameters } from "{{ Vite::asset('resources/js/orbitalCalculation.js') }}";
-import { calculateLinkBudget } from "{{ Vite::asset('resources/js/linkBudgetCalculations.js') }}"; // NEW Import
-
-        // --- Global Variables and Constants for UI Logic ---
         const LOCAL_STORAGE_HISTORY_KEY = 'appHistory';
         const LOCAL_STORAGE_HISTORY_INDEX_KEY = 'appHistoryIndex';
-        const LOCAL_STORAGE_FILES_KEY = 'savedFilesData'; // For Single Satellites and Constellations
+
+        const LOCAL_STORAGE_FILES_KEY = 'savedFilesData';
         const LOCAL_STORAGE_GROUND_STATIONS_KEY = 'savedGroundStationsData';
         const LOCAL_STORAGE_LINK_BUDGETS_KEY = 'savedLinkBudgetsData';
         const MAX_HISTORY_SIZE = 50;
         const SIMULATION_STATE_KEY = 'satelliteSimulationState';
         const FIRST_LOAD_FLAG_KEY = 'satelliteSimulationFirstLoad';
 
+        // history state
         let appHistory = [];
         let appHistoryIndex = -1;
 
-        // Shared data maps (managed by this inline script)
-        let fileOutputs = new Map(); // Stores Single Satellite and Constellation data
-        let groundStations = new Map(); // Stores Ground Station data
-        let linkBudgetAnalyses = new Map(); // Stores Link Budget Analysis output data
-
-        let editingFileName = null;
-        let editingFileType = null;
-
-        // This `is2DViewActive` is local to this script. Earth3Dsimulation.js uses its own flag.
         let is2DViewActive = false; // Keep this global to the inline script
+        // add these two lines before any functions use them:
+        let editingFileName  = null;
+        let editingFileType  = null;
+        let activeSatellitePopup = null;
 
-
-        // Attach functions to the window object so they can be called from HTML onclick attributes
         window.undoOperation = undoOperation;
         window.redoOperation = redoOperation;
 
-       //-----------------------------------------SideBar ----------------------------------------------------------
+        let fileOutputs = new Map();
+        let groundStations = new Map();
+        let linkBudgetAnalysis = new Map();
 
-        // --- FILE STORAGE FUNCTIONS ---
+        window.fileOutputs        = fileOutputs;
+        window.groundStations     = groundStations;
+        window.linkBudgetAnalysis = linkBudgetAnalysis;
+
+
         function saveFilesToLocalStorage() {
             try {
                 localStorage.setItem(LOCAL_STORAGE_FILES_KEY, JSON.stringify(Array.from(fileOutputs.entries())));
                 localStorage.setItem(LOCAL_STORAGE_GROUND_STATIONS_KEY, JSON.stringify(Array.from(groundStations.entries())));
-                localStorage.setItem(LOCAL_STORAGE_LINK_BUDGETS_KEY, JSON.stringify(Array.from(linkBudgetAnalyses.entries())));
+                localStorage.setItem(LOCAL_STORAGE_LINK_BUDGETS_KEY, JSON.stringify(Array.from(linkBudgetAnalysis.entries())));
             } catch (e) {
                 console.error("Error saving files to Local Storage:", e);
             }
         }
 
-        // --- FILE STORAGE FUNCTIONS ---
         function loadFilesFromLocalStorage() {
             try {
                 const savedFiles = localStorage.getItem(LOCAL_STORAGE_FILES_KEY);
-                if (savedFiles) {
-                    fileOutputs = new Map(JSON.parse(savedFiles));
-                } else {
-                    fileOutputs = new Map();
-                }
+                if (savedFiles) fileOutputs = new Map(JSON.parse(savedFiles));
+                else fileOutputs = new Map();
 
                 const savedGroundStations = localStorage.getItem(LOCAL_STORAGE_GROUND_STATIONS_KEY);
-                if (savedGroundStations) {
-                    groundStations = new Map(JSON.parse(savedGroundStations));
-                } else {
-                    groundStations = new Map();
-                }
+                if (savedGroundStations) groundStations = new Map(JSON.parse(savedGroundStations));
+                else groundStations = new Map();
 
                 const savedLinkBudgets = localStorage.getItem(LOCAL_STORAGE_LINK_BUDGETS_KEY);
-                if (savedLinkBudgets) {
-                    linkBudgetAnalyses = new Map(JSON.parse(savedLinkBudgets));
-                } else {
-                    linkBudgetAnalyses = new Map();
-                }
-
-                // Load history, but ensure it's within bounds
-                const savedHistory = localStorage.getItem(LOCAL_STORAGE_HISTORY_KEY);
-                const savedHistoryIndex = localStorage.getItem(LOCAL_STORAGE_HISTORY_INDEX_KEY);
-                if (savedHistory) {
-                    appHistory = JSON.parse(savedHistory);
-                    appHistoryIndex = savedHistoryIndex !== null ? parseInt(savedHistoryIndex) : -1;
-                    // Trim history if it's too large from a previous session
-                    if (appHistory.length > MAX_HISTORY_SIZE) {
-                        appHistory = appHistory.slice(appHistory.length - MAX_HISTORY_SIZE);
-                        appHistoryIndex = appHistory.length -1; // Adjust index
-                    }
-                } else {
-                    appHistory = [];
-                    appHistoryIndex = -1;
-                }
-
-                // Restore simulation state (isAnimating, speed, etc.)
-                const savedSimulationState = localStorage.getItem(SIMULATION_STATE_KEY);
-                if (savedSimulationState) {
-                    const state = JSON.parse(savedSimulationState);
-                    if (window.getSimulationCoreObjects) {
-                        const core3D = window.getSimulationCoreObjects();
-                        core3D.setIsAnimating(state.isAnimating);
-                        core3D.setCurrentSpeedMultiplier(state.currentSpeedMultiplier);
-                        core3D.setTotalSimulatedTime(state.totalSimulatedTime);
-                        core3D.setCurrentEpochUTC(state.currentEpochUTC);
-                        // selectedSatelliteId and closeViewEnabled will be handled by updateSatelliteListUI and load3DSimulationState
-                    }
-                }
-
+                if (savedLinkBudgets) linkBudgetAnalysis = new Map(JSON.parse(savedLinkBudgets));
+                else linkBudgetAnalysis = new Map();
             } catch (e) {
                 console.error("Error loading files from Local Storage:", e);
-                // Fallback to empty maps in case of parsing error
                 fileOutputs = new Map();
                 groundStations = new Map();
-                linkBudgetAnalyses = new Map();
-                appHistory = [];
-                appHistoryIndex = -1;
+                linkBudgetAnalysis = new Map();
             }
         }
 
-        // --- RESOURCE SIDEBAR UTILITIES ---
         function addFileToResourceSidebar(fileName, data, fileType) {
             let parentList;
-            let listItemText = fileName;
+            if (fileType === 'single') parentList = document.querySelector('#single-files-list ul');
+            else if (fileType === 'constellation') parentList = document.querySelector('#constellation-files-list ul');
+            else if (fileType === 'groundStation') parentList = document.querySelector('#ground-station-resource-list ul');
+            else if (fileType === 'linkBudget') parentList = document.querySelector('#link-budget-resource-list ul');
+            else return;
 
-            if (fileType === 'single') {
-                parentList = document.querySelector('#single-files-list ul');
-            } else if (fileType === 'constellation') {
-                parentList = document.querySelector('#constellation-files-list ul');
-            } else if (fileType === 'groundStation') {
-                parentList = document.querySelector('#ground-station-resource-list ul');
-            } else if (fileType === 'linkBudget') {
-                parentList = document.querySelector('#link-budget-resource-list ul');
-            } else {
-                console.error(`Unknown file type: ${fileType}`);
-                return;
-            }
+            const existingItem = document.querySelector(`li[data-file-name="${fileName}"][data-file-type="${fileType}"]`);
+            if (existingItem) existingItem.remove();
 
-            if (parentList) {
-                const existingItem = document.querySelector(`li[data-file-name="${fileName}"][data-file-type="${fileType}"]`);
-                if (existingItem) {
-                    existingItem.remove(); // Remove old entry if updating
-                }
+            const newFileItem = document.createElement('li');
+            newFileItem.dataset.fileName = fileName;
+            newFileItem.dataset.fileType = fileType;
+            let iconClass = fileType === 'single' || fileType === 'constellation' ? 'fas fa-satellite' : fileType === 'groundStation' ? 'fas fa-satellite-dish' : 'fas fa-tower-broadcast';
+            newFileItem.innerHTML = `<i class="${iconClass} sidebar-icon"></i>${fileName}`;
 
-                const newFileItem = document.createElement('li');
-                newFileItem.dataset.fileName = fileName;
-                newFileItem.dataset.fileType = fileType;
-                newFileItem.textContent = listItemText;
+            newFileItem.addEventListener('click', function() {
+                const clickedFileName = this.dataset.fileName;
+                const clickedFileType = this.dataset.fileType;
+                let dataForButtons;
+                if (clickedFileType === 'single' || clickedFileType === 'constellation') dataForButtons = fileOutputs.get(clickedFileName);
+                else if (clickedFileType === 'groundStation') dataForButtons = groundStations.get(clickedFileName);
+                else if (clickedFileType === 'linkBudget') dataForButtons = linkBudgetAnalysis.get(clickedFileName);
+                if (dataForButtons) window.viewSimulation(dataForButtons);
+            });
 
-                newFileItem.addEventListener('click', function() {
-                    const clickedFileName = this.dataset.fileName;
-                    const clickedFileType = this.dataset.fileType;
-                    let dataForButtons; // Data to pass to viewSimulation and selectOutputItem
+            newFileItem.addEventListener('contextmenu', function(event) {
+                event.preventDefault();
+                showContextMenu(event, this, this.dataset.fileName, this.dataset.fileType);
+            });
 
-                    if (clickedFileType === 'single' || clickedFileType === 'constellation') {
-                        dataForButtons = fileOutputs.get(clickedFileName);
-                    } else if (clickedFileType === 'groundStation') {
-                        dataForButtons = groundStations.get(clickedFileName);
-                    } else if (clickedFileType === 'linkBudget') {
-                        dataForButtons = linkBudgetAnalyses.get(clickedFileName);
-                    }
-
-                    if (dataForButtons) {
-                        // This is the "reset and show" action
-                        window.viewSimulation(dataForButtons);
-                        // After loading into simulation, select the item in the output tab
-                        window.selectOutputItem(clickedFileName, clickedFileType);
-                    } else {
-                        console.warn(`Data for ${clickedFileType} file '${clickedFileName}' not found.`);
-                        // Clear output sidebar if data not found
-                        updateOutputSidebar(null);
-                    }
-                    // Always switch to the output tab
-                    toggleTab('output-menu', document.getElementById('outputTabBtn'));
-                     // …after you’ve toggled into the Output tab…
-                    updateOutputTabForFile(clickedFileName, clickedFileType);
-                });
-
-                newFileItem.addEventListener('dblclick', function() {
-                    const clickedFileName = this.dataset.fileName;
-                    const clickedFileType = this.dataset.fileType;
-
-                    if (clickedFileType === 'single') {
-                        editSingleParameter(clickedFileName);
-                    } else if (clickedFileType === 'constellation') {
-                        editConstellationParameter(clickedFileName);
-                    } else if (clickedFileType === 'groundStation') {
-                        editGroundStation(clickedFileName);
-                    } else if (clickedFileType === 'linkBudget') { // Added for Link Budget
-                        editLinkBudget(clickedFileName);
-                    }
-                });
-
-                parentList.appendChild(newFileItem);
-            } else {
-                console.error(`Resource list for ${fileType} files not found.`);
-            }
+            parentList.appendChild(newFileItem);
         }
 
-        // --- OUTPUT SIDEBAR UTILITIES ---
-        function updateOutputSidebar(data) {
-            const outputMenu = document.getElementById('output-menu');
-            if (!outputMenu) {
-            console.error("Element with ID 'output-menu' not found.");
-            return;
-            }
-            // Target the specific container for action buttons
-            const outputActionsContainer = document.getElementById('output-actions-container');
-            if (!outputActionsContainer) {
-                console.error("Element with ID 'output-actions-container' not found.");
+        function showContextMenu(event, element, fileName, fileType) {
+            const existingMenu = document.querySelector('.custom-contextmenu');
+            if (existingMenu) existingMenu.remove();
+
+              const contextMenu = document.createElement('div');
+              contextMenu.className = 'custom-contextmenu';
+            contextMenu.innerHTML = `
+                <li onclick="editFile('${fileName}', '${fileType}')">Edit</li>
+                <li onclick="deleteFile('${fileName}', '${fileType}')">Delete</li>
+            `;
+            document.body.appendChild(contextMenu);
+            contextMenu.style.top = `${event.clientY}px`;
+            contextMenu.style.left = `${event.clientX}px`;
+            contextMenu.style.display = 'block';
+
+            document.addEventListener('click', function closeContextMenu() {
+                contextMenu.remove();
+                document.removeEventListener('click', closeContextMenu);
+            });
+        }
+
+        function editFile(fileName, fileType) {
+            if (fileType === 'single') editSingleParameter(fileName);
+            else if (fileType === 'constellation') editConstellationParameter(fileName);
+            else if (fileType === 'groundStation') editGroundStation(fileName);
+            else if (fileType === 'linkBudget') editLinkBudget(fileName);
+        }
+
+        // ----------------------
+        // ensure Output tab shows the latest files + sats
+        window.updateOutputTabForFile = function(fileName, fileType) {
+        // simplest: just rebuild the entire list
+        populateReportsList();
+        };
+
+       function removeSatelliteFromScene(id) {
+        const sat = window.activeSatellites.get(id);
+        if (!sat) return;
+
+        // Let the class clean up everything it added to the scene
+        sat.dispose();
+
+        // Remove from our map
+        window.activeSatellites.delete(id);
+        }
+        function removeGroundStationFromScene(id) {
+        const gs = window.activeGroundStations.get(id);
+        if (!gs) return;
+
+        gs.dispose();
+        window.activeGroundStations.delete(id);
+        }
+
+        function deleteFile(fileName, fileType) {
+        if (fileType === 'single') {
+            removeSatelliteFromScene(fileName);
+            fileOutputs.delete(fileName);
+
+        } else if (fileType === 'constellation') {
+            const data = fileOutputs.get(fileName) || {};
+            // 1) dispose every sat mesh/orbit/label, etc.
+            (data.satellites || []).forEach(satId => removeSatelliteFromScene(satId));
+            // 2) now just remove the _one_ constellation entry
+            fileOutputs.delete(fileName);
+        } else if (fileType === 'groundStation') {
+            removeGroundStationFromScene(fileName);
+            // remove the 3D object …
+            window.activeGroundStations.delete(fileName);
+            // … and remove the data so the name is truly gone
+            groundStations.delete(fileName);
+
+        } else if (fileType === 'linkBudget') {
+            linkBudgetAnalysis.delete(fileName);
+        }
+
+        saveFilesToLocalStorage();
+        populateResourceTab();
+        populateReportsList();
+        }
+
+
+        function populateReportsList() {
+        const reportsList = document.getElementById('reports-list');
+        reportsList.innerHTML = '';
+
+        // 1) Loop each “file” (single or constellation)…
+        fileOutputs.forEach((data, fileName) => {
+            // create the heading for this file
+            const fileLi = document.createElement('li');
+            fileLi.textContent = fileName;
+            reportsList.appendChild(fileLi);
+
+            // 2) now list its satellites
+            const satUl = document.createElement('ul');
+            (data.satellites || []).forEach(satId => {
+            // only show real entries
+            if (!satId) return;
+            const sat = window.activeSatellites.get(satId);
+            const satLi = document.createElement('li');
+            satLi.textContent = sat?.name || satId;    // show the user‐friendly name
+            satLi.dataset.id   = satId;
+            satLi.dataset.type = 'single';
+            satLi.addEventListener('click', () => showSatellitePopup(satId));
+            satUl.appendChild(satLi);
+            });
+            fileLi.appendChild(satUl);
+        });
+
+        // 3) then any ground stations, etc.
+        groundStations.forEach((data, name) => {
+            const li = document.createElement('li');
+            li.textContent = name;
+            li.dataset.id   = name;
+            li.dataset.type = 'groundStation';
+            li.addEventListener('click', () => showGroundStationPopup(name));
+            reportsList.appendChild(li);
+        });
+    }
+
+        // function to convert radians to degrees
+        function toRad(deg) { return (deg * Math.PI / 180).toFixed(2); }
+      // function to convert radians to degrees
+        function toDeg(rad) { return (rad * 180/Math.PI).toFixed(2); }
+        function computeAltitude(sat) {
+        // mirror your original calculation:
+        const kmPerUnit = EarthRadius;
+        return ((sat.mesh.position.length() * kmPerUnit) - kmPerUnit).toFixed(2);
+        }   
+
+// ---------------- showSatellitePopup ----------------
+        function showSatellitePopup(satId) {
+        // 1) Close old popup and unsubscribe its updater
+        if (window.activeSatellitePopup) {
+            const { element, updateHandler } = window.activeSatellitePopup;
+            element.remove();
+            window.removeEventListener('epochUpdated', updateHandler);
+            window.activeSatellitePopup = null;
+        }
+
+        // 2) Grab the sat
+        const sat = window.activeSatellites.get(satId);
+        if (!sat) return;
+
+        // 3) Build the popup
+        const popup = document.createElement('div');
+        popup.className = 'custom-popup';
+        popup.innerHTML = `
+            <h5>${sat.name}</h5>
+            <p><strong>Altitude:</strong>      <span class="altitude"></span> km</p>
+            <p><strong>Inclination:</strong>   <span class="inclination"></span>°</p>
+            <p><strong>Latitude:</strong>      <span class="latitude"></span>°</p>
+            <p><strong>Longitude:</strong>     <span class="longitude"></span>°</p>
+            <p><strong>RAAN:</strong>          <span class="raan"></span>°</p>
+            <p><strong>Orbital Period:</strong><span class="orbitalPeriod"></span> min</p>
+            <p><strong>Orbital Velocity:</strong><span class="orbitalVelocity"></span> km/s</p>
+            <p><strong>Beamwidth:</strong>     <span class="beamwidth"></span>°</p>
+            <p><strong>True Anomaly:</strong>  <span class="trueAnomaly"></span>°</p>
+            <p><strong>Eccentricity:</strong>   <span class="eccentricity"></span></p>
+            <p><strong>Arg. of Perigee:</strong><span class="argPerigee"></span>°</p>
+            <button class="popup-close">Close</button>
+        `;
+        document.body.appendChild(popup);
+        makeDraggable(popup);
+
+        // 4) The updater function
+        const updatePopup = () => {
+            // recalc derived params
+            const { orbitalPeriod, orbitalVelocity } = calculateDerivedOrbitalParameters(
+            sat.params.semiMajorAxis - SCENE_EARTH_RADIUS,
+            sat.params.eccentricity
+            );
+            // write into spans
+            popup.querySelector('.altitude').textContent      = computeAltitude(sat);
+            popup.querySelector('.inclination').textContent   = toDeg(sat.params.inclinationRad);
+            popup.querySelector('.latitude').textContent     = sat.latitudeDeg.toFixed(2);
+            popup.querySelector('.longitude').textContent    = sat.longitudeDeg.toFixed(2);
+            popup.querySelector('.raan').textContent         = toDeg(sat.currentRAAN);
+            popup.querySelector('.orbitalPeriod').textContent= (orbitalPeriod/60).toFixed(2);
+            popup.querySelector('.orbitalVelocity').textContent = orbitalVelocity.toFixed(2);
+            popup.querySelector('.beamwidth').textContent    = sat.params.beamwidth;
+            popup.querySelector('.trueAnomaly').textContent  = toDeg(sat.currentTrueAnomaly);
+            popup.querySelector('.eccentricity').textContent = sat.params.eccentricity.toFixed(4);
+            popup.querySelector('.argPerigee').textContent   = toDeg(sat.params.argPerigeeRad);
+        };
+
+        // 5) Hook it up to your simulation’s epochUpdated event
+        window.addEventListener('epochUpdated', updatePopup);
+        // also call it once immediately so all fields are set
+        updatePopup();
+
+        // 6) Close‐button tears down the handler & popup
+        popup.querySelector('.popup-close').addEventListener('click', () => {
+            popup.remove();
+            window.removeEventListener('epochUpdated', updatePopup);
+            window.activeSatellitePopup = null;
+        });
+
+        // 7) Save state so next time we can unsubscribe it
+        window.activeSatellitePopup = {
+            element:      popup,
+            satId:        satId,
+            updateHandler: updatePopup
+        };
+        }
+
+
+        // Show Ground Station Popup
+        function showGroundStationPopup(gsId) {
+            const gs = window.activeGroundStations.get(gsId);
+            if (!gs) return;
+
+            const popup = document.createElement('div');
+            popup.className = 'custom-popup';
+            popup.innerHTML = `
+                <h5>${gs.name}</h5>
+                <p><strong>Latitude:</strong> ${gs.latitude}°</p>
+                <p><strong>Longitude:</strong> ${gs.longitude}°</p>
+                <p><strong>Beamwidth:</strong> ${gs.minElevationAngle}°</p>
+                <button onclick="this.parentElement.remove()">Close</button>
+            `;
+            document.body.appendChild(popup);
+            makeDraggable(popup);
+        }
+
+        function makeDraggable(element) {
+            let isDragging = false;
+            let offsetX, offsetY;
+
+            element.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                offsetX = e.clientX - element.getBoundingClientRect().left;
+                offsetY = e.clientY - element.getBoundingClientRect().top;
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (isDragging) {
+                    element.style.left = `${e.clientX - offsetX}px`;
+                    element.style.top = `${e.clientY - offsetY}px`;
+                }
+            });
+
+            document.addEventListener('mouseup', () => {
+                isDragging = false;
+            });
+        }
+
+
+        //------------------------------ Link Budget Report Management-----------------------------------
+
+        // somewhere in your initialization code
+        document
+        .getElementById('create-link-report-btn')
+        .addEventListener('click', showLinkReportPopup);
+
+        window.showLinkReportPopup = showLinkReportPopup;
+
+        // Show the "Save Link Report" dialog
+        function showLinkReportPopup() {
+            // remove any existing popup
+            document.querySelectorAll('.custom-popup').forEach(el => el.remove());
+            // gather lists
+            const sats = Array.from(window.activeSatellites.values())
+                        .map(s => ({ id: s.id, name: s.name, start: s.initialEpochUTC }));
+            const gses = Array.from(window.activeGroundStations.values())
+                        .map(g => ({ id: g.id, name: g.name }));
+
+            if (!sats.length || !gses.length) {
+                const popup = document.createElement('div');
+                popup.className = 'custom-popup';
+                popup.innerHTML = `<p>You need at least one satellite and one GS active.</p>
+                                <button id="linkCloseOnly" class="btn btn-sm btn-primary">Close</button>`;
+                document.body.appendChild(popup);
+                popup.querySelector('#linkCloseOnly').onclick = () => popup.remove();
                 return;
             }
-            outputActionsContainer.innerHTML = ''; // Always clear previous buttons
 
-            // If no data (e.g., no item selected, or data deleted), hide satellite data display and don't show buttons.
-            if (!data) {
-                document.getElementById("satelliteDataDisplay").style.display = 'none';
-                return;
-            }
-            // Add Edit/Delete/View buttons dynamically
-            const actionContainer = document.createElement('div');
-            actionContainer.classList.add('output-actions', 'mt-3', 'mb-2');
+            const popup = document.createElement('div');
+            popup.className = 'custom-popup';
+            Object.assign(popup.style, {
+                position: 'absolute',
+                left: '50%', top: '50%',
+                transform: 'translate(-50%,-50%)',
+                background: '#fff',
+                color: '#000',
+                padding: '20px',
+                border: '1px solid #ccc',
+                zIndex: 10000,
+                width: '420px',
+                maxHeight: '80vh',
+                overflowY: 'auto'
+            });
 
-            // Create and append the View, Edit, and Delete buttons
-            const viewButton = document.createElement('button');
-            viewButton.textContent = 'View Simulation';
-            viewButton.classList.add('btn', 'btn-sm', 'btn-info', 'me-2');
-            // This button's click should re-trigger the full view simulation for the selected item
-            viewButton.onclick = () => {
-                let dataToView;
-                if (data.fileType === 'single' || data.fileType === 'constellation') {
-                    dataToView = fileOutputs.get(data.fileName);
-                } else if (data.fileType === 'groundStation') {
-                    dataToView = groundStations.get(data.name);
-                } else if (data.fileType === 'linkBudget') {
-                    dataToView = linkBudgetAnalyses.get(data.name);
-                }
-                if (dataToView) {
-                    window.viewSimulation(dataToView);
-                    // Ensure the output tab is active and button highlighted after viewing
-                    toggleTab('output-menu', document.getElementById('outputTabBtn'));
-                    highlightOutputButton(data.fileName || data.name, data.fileType);
-                }
+            // helper: ms→ local-datetime
+            const fmtLocal = ms => {
+                const dt = new Date(ms);
+                const pad = n => String(n).padStart(2, '0');
+                return `${dt.getFullYear()}-${pad(dt.getMonth()+1)}-${pad(dt.getDate())}` +
+                    `T${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
             };
-            outputActionsContainer.appendChild(viewButton);
 
-            const editButton = document.createElement('button');
-            editButton.textContent = 'Edit';
-            editButton.classList.add('btn', 'btn-sm', 'btn-primary', 'me-2');
-            if (data.fileType === 'single') {
-                editButton.onclick = () => editSingleParameter(data.fileName);
-            } else if (data.fileType === 'constellation') {
-                editButton.onclick = () => editConstellationParameter(data.fileName);
-            } else if (data.fileType === 'groundStation') {
-                editButton.onclick = () => editGroundStation(data.name);
-            } else if (data.fileType === 'linkBudget') { // Added for Link Budget
-                editButton.onclick = () => editLinkBudget(data.name);
-            } else {
-                editButton.style.display = 'none'; // No direct edit for unknown types
+            popup.innerHTML = `
+                <h5>Create Satellite–GS Link Report</h5>
+                <label>Satellite:</label>
+                <select id="linkSatSel" class="form-control mb-2">
+                ${sats.map(s => `<option value="${s.id}" data-start="${s.start}">${s.name}</option>`).join('')}
+                </select>
+                <label>Ground Station:</label>
+                <select id="linkGsSel" class="form-control mb-2">
+                ${gses.map(g => `<option value="${g.id}">${g.name}</option>`).join('')}
+                </select>
+                <label>Start Time:</label>
+                <input type="datetime-local" id="linkStart" class="form-control mb-2" disabled />
+                <label>End Time:</label>
+                <input type="datetime-local" id="linkEnd" class="form-control mb-2" />
+                <label>Time Step (sec):</label>
+                <input type="number" id="linkStep" class="form-control mb-2" min="1" value="60" />
+                <label>File Type:</label>
+                <select id="linkFormat" class="form-control mb-3">
+                <option value="csv" selected>.csv</option>
+                <option value="txt">.txt</option>
+                </select>
+
+                <div class="text-end mb-2">
+                <button class="btn btn-secondary btn-sm" id="linkCancel">Close</button>
+                <button class="btn btn-info btn-sm"   id="linkCompute">Compute</button>
+                </div>
+
+                <div id="linkReportContainer" style="font-family:monospace; white-space:pre; max-height:200px; overflow:auto; border:1px solid #ddd; padding:8px;"></div>
+
+                <div class="text-end mt-2">
+                <button class="btn btn-secondary btn-sm" id="linkClose2">Close</button>
+                <button class="btn btn-primary btn-sm"  id="linkSave" disabled>Save</button>
+                </div>
+            `;
+
+            document.body.appendChild(popup);
+
+            const satSel   = popup.querySelector('#linkSatSel');
+            const gsSel    = popup.querySelector('#linkGsSel');
+            const startIn  = popup.querySelector('#linkStart');
+            const endIn    = popup.querySelector('#linkEnd');
+            const stepIn   = popup.querySelector('#linkStep');
+            const fmtSel   = popup.querySelector('#linkFormat');
+            const compute  = popup.querySelector('#linkCompute');
+            const saveBtn  = popup.querySelector('#linkSave');
+            const close1   = popup.querySelector('#linkCancel');
+            const close2   = popup.querySelector('#linkClose2');
+            const reportCt = popup.querySelector('#linkReportContainer');
+
+            // initialize start/end
+        function refreshTimes() {
+                const startMs = +satSel.selectedOptions[0].dataset.start;
+                startIn.value   = fmtLocal(startMs);
+                endIn.min       = fmtLocal(startMs);
+                if (!endIn.value || endIn.value < startIn.value) endIn.value = fmtLocal(startMs + 3600*1000);
             }
-            outputActionsContainer.appendChild(editButton);
+            satSel.onchange = refreshTimes;
+            refreshTimes();
 
-            const deleteButton = document.createElement('button');
-            deleteButton.textContent = 'Delete';
-            deleteButton.classList.add('btn', 'btn-sm', 'btn-danger');
-            deleteButton.onclick = () => deleteFile(data.fileName || data.name, data.fileType);
-            outputActionsContainer.appendChild(deleteButton);
+            close1.onclick = close2.onclick = () => popup.remove();
 
-            outputMenu.appendChild(actionContainer);
+            compute.onclick = () => {
+                reportCt.textContent = '⏳ computing…';
+                saveBtn.disabled    = true;
+
+                // grab values
+                const satId  = satSel.value;
+                const gsId   = gsSel.value;
+                const t0     = new Date(startIn.value).getTime();
+                const t1     = new Date(endIn.value  ).getTime();
+                const step   = parseFloat(stepIn.value) * 1000;
+                const ext    = fmtSel.value;
+
+                if (t1 < t0) {
+                alert('End must be ≥ start');
+                return;
+                }
+
+                const sat = window.activeSatellites.get(satId);
+                const gs  = window.activeGroundStations.get(gsId);
+                const access = calculateAccessPeriods(sat, gs, t0, t1, step);
+
+                // Number of passes:
+                const numPasses = access.length;
+
+                // Total contact time (in seconds):
+                const totalContactSec = access.reduce((sum, p) => sum + p.duration, 0);
+
+                // Average pass duration:
+                const avgSec = numPasses ? totalContactSec / numPasses : 0;
+
+                // Prep a little summary text:
+                const summary = [
+                `# Pass Summary`,
+                `Total passes: ${numPasses}`,
+                `Total contact time: ${(totalContactSec/3600).toFixed(2)} h (${totalContactSec.toFixed(0)} s)`,
+                `Average pass: ${(avgSec/60).toFixed(2)} min (${avgSec.toFixed(0)} s)`,
+                ``,  // blank line before the detail table
+                ];
+
+                const detailLines = generateLinkReportContent(sat, gs, t0, t1, access, ext);
+                // combine summary + details:
+                const lines = summary.concat(detailLines);
+                reportCt.textContent = lines.join('\n');
+
+                saveBtn.disabled    = false;
+                // stash for save
+                saveBtn._data = { filename:`link_${sat.name}_${gs.name}.${ext}`, text:lines.join('\n')+'\n' };
+            };
+
+            saveBtn.onclick = () => {
+                const { filename, text } = saveBtn._data;
+                downloadText(filename, text);
+                popup.remove();
+            };
+            }
+
+        function calculateAccessPeriods(sat, gs, startTs, endTs, step) {
+        const core     = window.getSimulationCoreObjects();
+        const oldT     = core.totalSimulatedTime;
+        const oldE     = core.currentEpochUTC;
+        const oldRot   = core.earthGroup.rotation.y;
+        const initEpoch= sat.initialEpochUTC;
+        const periods  = [];
+
+        let prevVis = false;
+        let visStartCoarse = null;
+
+        // helper: isVisible at exact time t (ms)
+        function isVisAt(t) {
+            const simSec = (t - initEpoch)/1000;
+            core.setTotalSimulatedTime(simSec);
+            core.setCurrentEpochUTC(initEpoch);
+            core.earthGroup.rotation.y =
+            window.initialEarthRotationOffset
+            + simSec * window.EARTH_ANGULAR_VELOCITY_RAD_PER_SEC;
+            sat.updatePosition(simSec, 0);
+            return checkVisibility(sat, gs);
+        }
+
+        // refine the flip between [t0,t1] to ±1s accuracy
+        function findTransition(t0, t1) {
+            let lo = t0, hi = t1;
+            while (hi - lo > 1000) {           // stop when within 1 s
+            const mid = (lo + hi) / 2;
+            if (isVisAt(mid)) hi = mid;
+            else lo = mid;
+            }
+            return (lo + hi) / 2;
+        }
+
+        // coarse scan
+        for (let t = startTs; t <= endTs; t += step) {
+            const vis = isVisAt(t);
+
+            // off→on: record coarse start
+            if (vis && !prevVis) {
+            visStartCoarse = t;
+            }
+            // on→off: refine both boundaries and push
+            if (!vis && prevVis) {
+            const tOn  = findTransition(visStartCoarse - step, visStartCoarse);
+            const tOff = findTransition(t - step, t);
+            periods.push({
+                start:    tOn,
+                stop:     tOff,
+                duration: (tOff - tOn) / 1000
+            });
+            visStartCoarse = null;
+            }
+            prevVis = vis;
+        }
+
+        // if still in view at endTs, refine the final off
+        if (prevVis && visStartCoarse != null) {
+            const tOn  = findTransition(visStartCoarse - step, visStartCoarse);
+            const tOff = findTransition(endTs - step, endTs);
+            periods.push({
+            start:    tOn,
+            stop:     tOff,
+            duration: (tOff - tOn) / 1000
+            });
+        }
+
+        // restore state
+        core.setTotalSimulatedTime(oldT);
+        core.setCurrentEpochUTC(oldE);
+        core.earthGroup.rotation.y = oldRot;
+        sat.updatePosition(oldT, 0);
+
+        return periods;
         }
 
 
-// --- GENERAL MODAL AND ALERT FUNCTIONS ---
+
+
+        function checkVisibility(sat, gs) {
+            // Get world position of ground station (transforms from ECEF to ECI)
+            const gsWorldPos = new THREE.Vector3();
+            gs.mesh.getWorldPosition(gsWorldPos);
+            // Satellite position is already in world coordinates (ECI)
+            const satWorldPos = sat.mesh.position;
+
+            // 1) Inside beam cone?
+            const satToGs = gsWorldPos.clone().sub(satWorldPos).normalize();
+            const nadir = satWorldPos.clone().negate().normalize();
+            const halfBeamRad = sat.params.beamwidth * Math.PI / 360; // Half beam angle in radians
+            const coneOK = nadir.dot(satToGs) >= Math.cos(halfBeamRad);
+
+            // 2) Above horizon?
+            const gsDir = gsWorldPos.clone().normalize();
+            const satDir = satWorldPos.clone().normalize();
+            const centralAngle = Math.acos(THREE.MathUtils.clamp(gsDir.dot(satDir), -1, 1));
+            const horizonOK = centralAngle <= sat.coverageAngleRad;
+
+            return coneOK && horizonOK;
+        }
+
+
+        // Generate the report content
+        function generateLinkReportContent(sat, gs, startTs, endTs, accessPeriods, fileExt) {
+        const lines = [];
+        const gsPos = `${gs.longitude.toFixed(6)}, ${gs.latitude.toFixed(6)}`;
+
+        if (fileExt === 'txt') {
+            lines.push(`Satellite Name: ${sat.name}`);
+            lines.push(`Ground Station Name: ${gs.name}`);
+            lines.push(`Ground Station Position: ${gsPos}`);
+            lines.push(`Start Time: ${new Date(startTs).toUTCString()}`);
+            lines.push(`Stop Time: ${new Date(endTs).toUTCString()}`);
+            lines.push('');
+            lines.push(`Access\tStart Time (UTC)\tStop Time (UTC)\tDuration (sec)`);
+            accessPeriods.forEach((p, i) => {
+            lines.push(`${i + 1}\t${new Date(p.start).toUTCString()}\t${new Date(p.stop).toUTCString()}\t${p.duration.toFixed(2)}`);
+            });
+        } else {
+            lines.push(`Satellite Name:,${sat.name}`);
+            lines.push(`Ground Station Name:,${gs.name}`);
+            lines.push(`Ground Station Position:,${gsPos}`);
+            lines.push(`Start Time:,${new Date(startTs).toUTCString()}`);
+            lines.push(`Stop Time:,${new Date(endTs).toUTCString()}`);
+            lines.push('');
+            lines.push(`Access,Start Time (UTC),Stop Time (UTC),Duration (sec)`);
+            accessPeriods.forEach((p, i) => {
+            lines.push(`${i + 1},${new Date(p.start).toUTCString()},${new Date(p.stop).toUTCString()},${p.duration.toFixed(2)}`);
+            });
+        }
+        return lines;
+        }
+
+        // Reuse existing download helper
+        function downloadText(filename, txt) {
+        const blob = new Blob([txt], { type: 'text/plain' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = filename;
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(a.href);
+        }
+
+        //------------------------------ End of Link Budget Report Management-----------------------------------
+        // Clear the resource tab content
+        document.getElementById('resourceTabBtn').addEventListener('click', function() {
+            toggleTab('resource-menu', this);
+        });
+        document.getElementById('outputTabBtn').addEventListener('click', function() {
+            toggleTab('output-menu', this);
+        });
+        document.getElementById('resourceTabBtn').click(); // Set default tab to Resource
+        function clearResourceTab() {
+            document.querySelector('#single-files-list ul').innerHTML = '';
+            document.querySelector('#constellation-files-list ul').innerHTML = '';
+            document.querySelector('#ground-station-resource-list ul').innerHTML = '';
+            document.querySelector('#link-budget-resource-list ul').innerHTML = '';
+        }
+
+        function populateResourceTab() {
+            clearResourceTab();
+            fileOutputs.forEach((data, fileName) => addFileToResourceSidebar(fileName, data, data.fileType));
+            groundStations.forEach((data, name) => addFileToResourceSidebar(name, data, 'groundStation'));
+            linkBudgetAnalysis.forEach((data, name) => addFileToResourceSidebar(name, data, 'linkBudget'));
+        }
+
+        function toggleTab(id, btn) {
+            document.querySelectorAll('.menu-content').forEach(div => div.classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
+            document.querySelectorAll('.nav-tabs .nav-link').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            if (id === 'output-menu') populateReportsList();
+        }
+
+        window.onload = function() {
+            const navigationEntries = performance.getEntriesByType('navigation');
+            if (navigationEntries.length > 0 && navigationEntries[0].type === 'reload') {
+                fileOutputs = new Map();
+                groundStations = new Map();
+                linkBudgetAnalysis = new Map();
+                localStorage.removeItem(LOCAL_STORAGE_FILES_KEY);
+                localStorage.removeItem(LOCAL_STORAGE_GROUND_STATIONS_KEY);
+                localStorage.removeItem(LOCAL_STORAGE_LINK_BUDGETS_KEY);
+                clearResourceTab();
+                populateReportsList();
+            } else {
+                loadFilesFromLocalStorage();
+                populateResourceTab();
+                populateReportsList();
+            }
+        };
+        window.toggleTab = toggleTab;
+
+// ------------------------------------- GENERAL MODAL AND ALERT FUNCTIONS ---------------------------------------
         window.showCustomConfirmation = showCustomConfirmation;
         window.showCustomAlert = showCustomAlert;
-        window.toggleTab = toggleTab; // Added
         window.closepopup = closepopup; // Added
         window.formatNumberInput = formatNumberInput; // Added if it's used elsewhere in HTML (it is in `showModal` helper)
         window.showInputError = showInputError; // Added as it's used within your script
@@ -1046,17 +1273,6 @@ import { calculateLinkBudget } from "{{ Vite::asset('resources/js/linkBudgetCalc
             inputElement.classList.remove('is-invalid');
         }
 
-        function toggleTab(id, btn) {
-            document.querySelectorAll('.menu-content').forEach(div => div.classList.add('hidden'));
-            document.getElementById(id).classList.remove('hidden');
-            document.querySelectorAll('.nav-tabs .nav-link').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            // When switching to output tab, refresh satellite list display
-            if (id === 'output-menu') {
-                updateSatelliteListUI();
-            }
-        }
-
         function formatNumberInput(value) {
             return String(value).replace(/,/g, '.');
         }
@@ -1076,7 +1292,7 @@ import { calculateLinkBudget } from "{{ Vite::asset('resources/js/linkBudgetCalc
         applyBtn.onclick = function () {
             const inputs = document.querySelectorAll('#fileModalBody input');
             inputs.forEach(input => clearInputError(input.id));
-            const success = onSave(); // Create the simulation
+            const success = onSave(); // Save Simulation
             if (success) {
                 modal.hide();
             }
@@ -1181,7 +1397,6 @@ import { calculateLinkBudget } from "{{ Vite::asset('resources/js/linkBudgetCalc
             }
         }
     }
-
         function closepopup() {
             const modal = bootstrap.Modal.getInstance(document.getElementById('fileModal'));
             if (modal) {
@@ -1193,480 +1408,6 @@ import { calculateLinkBudget } from "{{ Vite::asset('resources/js/linkBudgetCalc
             editingFileType = null;
         }
 
-// ------------------------------------- SATELLITE LIST UI FUNCTIONS ----------------------------------------
-
-/**
- * Highlights the selected output button (satellite, ground station, or link budget).
- * Removes 'active' class from all buttons and adds it to the specified button.
- * @param {string} id - The ID of the item to highlight (e.g., satellite name, ground station name).
- * @param {string} type - The type of the item ('single', 'constellation', 'groundStation', 'linkBudget').
- */
-function highlightOutputButton(id, type) {
-    // Remove active class from all buttons
-    document.querySelectorAll('#satelliteButtonsContainer .satellite-button').forEach(btn => {
-        btn.classList.remove('active');
-    });
-    // Add active class to the newly selected button
-    const selectedButton = document.querySelector(`#satelliteButtonsContainer .satellite-button[data-id="${id}"][data-type="${type}"]`);
-    if (selectedButton) {
-        selectedButton.classList.add('active');
-    }
-}
-
-
-/**
- * Updates the display for selected satellite data.
- * Assumes `window.activeSatellites`, `EarthRadius`, and `calculateDerivedOrbitalParameters` are defined globally.
- */
-function updateSatelliteDataDisplay() {
-    const displayDiv = document.getElementById("satelliteDataDisplay");
-    // Ensure selectedSatelliteId and activeSatellites are available
-    if (!window.selectedSatelliteId || !window.activeSatellites || !window.activeSatellites.get) {
-        if (displayDiv) displayDiv.style.display = 'none';
-        return;
-    }
-
-    const selectedSat = window.activeSatellites.get(window.selectedSatelliteId);
-
-    if (selectedSat && selectedSat.mesh && selectedSat.mesh.position && selectedSat.params) {
-        if (displayDiv) displayDiv.style.display = 'block';
-
-        // Ensure elements exist before trying to update innerText
-        if (document.getElementById("dataName")) document.getElementById("dataName").innerText = selectedSat.name;
-
-        // Altitude: Convert scene units back to KM for display (selectedSat.mesh.position.length() is in scene units)
-        // Assuming EarthRadius (from parametersimulation.js) is in KM and SCENE_EARTH_RADIUS is 1.
-        // Altitude = (distance from origin in scene units * KM_per_scene_unit) - EarthRadius_in_KM
-        // Make sure EarthRadius is accessible globally, perhaps through a global variable or import
-        const kmPerSceneUnit = typeof EarthRadius !== 'undefined' ? EarthRadius : 6371; // Default to EarthRadius if not defined
-        const currentAltitudeKm = (selectedSat.mesh.position.length() * kmPerSceneUnit) - kmPerSceneUnit; // Corrected: subtract EarthRadius from total radius in KM
-        if (document.getElementById("dataAltitude")) document.getElementById("dataAltitude").innerText = currentAltitudeKm.toFixed(2);
-
-        // Ensure calculateDerivedOrbitalParameters is accessible globally
-        if (typeof calculateDerivedOrbitalParameters === 'function') {
-            const { orbitalPeriod, orbitalVelocity } = calculateDerivedOrbitalParameters(
-                selectedSat.params.semiMajorAxis - kmPerSceneUnit, // orbitalCalculation expects altitude in KM
-                selectedSat.params.eccentricity
-            );
-            if (document.getElementById("dataOrbitalPeriod")) document.getElementById("dataOrbitalPeriod").innerText = (orbitalPeriod / 60).toFixed(2);
-            if (document.getElementById("dataOrbitalVelocity")) document.getElementById("dataOrbitalVelocity").innerText = orbitalVelocity.toFixed(2);
-        } else {
-            console.warn("calculateDerivedOrbitalParameters function not found. Orbital period and velocity will not be displayed.");
-            if (document.getElementById("dataOrbitalPeriod")) document.getElementById("dataOrbitalPeriod").innerText = "N/A";
-            if (document.getElementById("dataOrbitalVelocity")) document.getElementById("dataOrbitalVelocity").innerText = "N/A";
-        }
-
-        if (document.getElementById("dataPosition")) document.getElementById("dataPosition").innerText = `(${selectedSat.mesh.position.x.toFixed(3)}, ${selectedSat.mesh.position.y.toFixed(3)}, ${selectedSat.mesh.position.z.toFixed(3)})`;
-        // Add Latitude and Longitude
-        if (document.getElementById("dataLatitude"))  document.getElementById("dataLatitude").innerText = selectedSat.latitudeDeg.toFixed(2);
-        if (document.getElementById("dataLongitude")) document.getElementById("dataLongitude").innerText = selectedSat.longitudeDeg.toFixed(2);
-
-        if (document.getElementById("dataInclination")) document.getElementById("dataInclination").innerText = (selectedSat.params.inclinationRad * (180 / Math.PI)).toFixed(2);
-        if (document.getElementById("dataEccentricity")) document.getElementById("dataEccentricity").innerText = selectedSat.params.eccentricity.toFixed(4);
-        if (document.getElementById("dataRaan")) document.getElementById("dataRaan").innerText = (selectedSat.currentRAAN * (180 / Math.PI)).toFixed(2);
-        if (document.getElementById("dataArgPerigee")) document.getElementById("dataArgPerigee").innerText = (selectedSat.params.argPerigeeRad * (180 / Math.PI)).toFixed(2);
-        if (document.getElementById("dataTrueAnomaly")) document.getElementById("dataTrueAnomaly").innerText = (selectedSat.currentTrueAnomaly * (180 / Math.PI)).toFixed(2);
-    } else {
-        if (displayDiv) displayDiv.style.display = 'none'; // Hide if no valid satellite data is selected
-    }
-}
-
-
-/**
- * Selects an output item (satellite, ground station, or link budget) and updates the UI accordingly.
- * This is the unified function for selecting any item.
- * @param {string} id - The ID of the item to select.
- * @param {string} type - The type of the item ('single', 'constellation', 'groundStation', 'linkBudget').
- */
-function selectOutputItem(id, type) {
-    // Highlight the button in the output list
-    highlightOutputButton(id, type);
-
-    let selectedData = null;
-    // Set global selected ID and type
-    window.selectedSatelliteId = null; // Clear previous satellite selection
-    window.selectedGroundStationId = null; // Clear previous ground station selection
-    window.selectedItemType = type;
-
-    const satelliteDataDisplay = document.getElementById("satelliteDataDisplay");
-
-    // Hide all constellation member lists before potentially showing one
-    document.querySelectorAll('.constellation-members-list').forEach(list => {
-        list.classList.add('hidden');
-        const toggleIcon = list.previousElementSibling.querySelector('.toggle-icon');
-        if (toggleIcon) toggleIcon.innerText = '▼';
-    });
-
-    if (type === 'single') {
-        selectedData = fileOutputs.get(id) || (window.activeSatellites ? window.activeSatellites.get(id) : null);
-        window.selectedSatelliteId = id; // Set selected satellite for real-time display
-        updateSatelliteDataDisplay(); // Update data display for satellites
-        if (satelliteDataDisplay) satelliteDataDisplay.style.display = 'block';
-        if (window.highlightSatelliteInScene) window.highlightSatelliteInScene(id);
-        if (window.highlightGroundStationInScene) window.highlightGroundStationInScene(null); // Clear GS highlight
-
-    } else if (type === 'constellation') {
-        selectedData = fileOutputs.get(id); // constellation data from fileOutputs map
-        if (satelliteDataDisplay) satelliteDataDisplay.style.display = 'none'; // Constellations don't have detailed data panel
-        if (window.highlightSatelliteInScene) window.highlightSatelliteInScene(null); // Clear satellite highlight
-        if (window.highlightGroundStationInScene) window.highlightGroundStationInScene(null); // Clear GS highlight
-
-        // Toggle the visibility of the constellation's member list
-        const memberList = document.getElementById(`constellation-${id}-members`);
-        if (memberList) {
-            memberList.classList.toggle('hidden');
-            const toggleIcon = memberList.previousElementSibling.querySelector('.toggle-icon');
-            if (toggleIcon) {
-                if (memberList.classList.contains('hidden')) {
-                    toggleIcon.innerText = '▼';
-                } else {
-                    toggleIcon.innerText = '▲';
-                }
-            }
-        }
-    } else if (type === 'groundStation') {
-        selectedData = groundStations.get(id);
-        window.selectedGroundStationId = id; // Set selected ground station
-        if (satelliteDataDisplay) satelliteDataDisplay.style.display = 'none'; // Hide satellite data display for GS
-        if (window.highlightGroundStationInScene) window.highlightGroundStationInScene(id);
-        if (window.highlightSatelliteInScene) window.highlightSatelliteInScene(null); // Clear satellite highlight
-
-    } else if (type === 'linkBudget') {
-        selectedData = linkBudgetAnalyses.get(id);
-        if (satelliteDataDisplay) satelliteDataDisplay.style.display = 'none'; // Hide satellite data display for LB
-        if (window.highlightSatelliteInScene) window.highlightSatelliteInScene(null); // Clear satellite highlight
-        if (window.highlightGroundStationInScene) window.highlightGroundStationInScene(null); // Clear GS highlight
-    }
-
-    // Update the action buttons (View, Edit, Delete) based on the selected item's data
-    if (window.updateOutputSidebar) {
-        window.updateOutputSidebar(selectedData);
-    }
-}
-
-
-/**
- * Function to select a single satellite and update the UI.
- * Delegates to selectOutputItem for unified handling.
- * @param {string} id - The ID of the satellite to select.
- */
-function selectSatellite(id) {
-    // Determine the type: check if it's a constellation's top-level definition, or a standalone single, or an active satellite instance.
-    let itemType;
-    if (fileOutputs.has(id)) {
-        itemType = fileOutputs.get(id).fileType;
-    } else if (window.activeSatellites && window.activeSatellites.has(id)) {
-        itemType = 'single'; // Treat as a 'single' if it's just an active satellite instance
-    } else {
-        console.warn(`Attempted to select satellite with ID '${id}' but its type could not be determined.`);
-        return;
-    }
-    selectOutputItem(id, itemType);
-}
-
-/**
- * Function to select a ground station and update the UI.
- * Delegates to selectOutputItem for unified handling.
- * @param {string} id - The ID of the ground station to select.
- */
-function selectGroundStation(id) {
-    selectOutputItem(id, groundStations.get(id)?.fileType || 'groundStation');
-}
-
-/**
- * Updates the satellite list UI, displaying buttons for single satellites, constellations,
- * ground stations, and link budget analyses, with expandable constellation views.
- * Assumes `fileOutputs`, `groundStations`, `linkBudgetAnalyses`, and `window.activeSatellites` maps are globally accessible.
- */
-function updateSatelliteListUI() {
-    const mainContainer = document.getElementById("satelliteButtonsContainer");
-    if (!mainContainer) {
-        console.warn("Element #satelliteButtonsContainer not found.");
-        return;
-    }
-    mainContainer.innerHTML = ''; // Clear previous content
-
-    const satelliteListDisplay = document.getElementById("satelliteListDisplay");
-    const satelliteDataDisplay = document.getElementById("satelliteDataDisplay");
-
-    // Hide data display initially unless an item is explicitly selected
-    if (satelliteDataDisplay) satelliteDataDisplay.style.display = 'none';
-
-    // Check if there are any items to display across all categories
-    const hasAnyItems = fileOutputs.size > 0 || groundStations.size > 0 || linkBudgetAnalyses.size > 0;
-
-    if (hasAnyItems) {
-        if (satelliteListDisplay) satelliteListDisplay.style.display = 'block';
-
-        // --- Create containers for each category ---
-        mainContainer.insertAdjacentHTML('beforeend', `<h6 class="text-dark mt-2">Single Satellites:</h6><div id="singleSatButtons" class="btn-group-container"></div>`);
-        const singleSatButtonsContainer = document.getElementById('singleSatButtons');
-
-        mainContainer.insertAdjacentHTML('beforeend', `<h6 class="text-dark mt-2">Constellations:</h6><div id="constellationButtons" class="btn-group-container flex-col"></div>`);
-        const constellationButtonsContainer = document.getElementById('constellationButtons');
-
-        mainContainer.insertAdjacentHTML('beforeend', `<h6 class="text-dark mt-2">Ground Stations:</h6><div id="groundStationButtons" class="btn-group-container"></div>`);
-        const groundStationButtonsContainer = document.getElementById('groundStationButtons');
-
-        mainContainer.insertAdjacentHTML('beforeend', `<h6 class="text-dark mt-2">Link Budget Analyses:</h6><div id="linkBudgetButtons" class="btn-group-container"></div>`);
-        const linkBudgetButtonsContainer = document.getElementById('linkBudgetButtons');
-
-
-        // --- Populate buttons into their respective containers ---
-
-        // Add buttons for all saved single satellites from fileOutputs
-        fileOutputs.forEach(data => {
-            if (data.fileType === 'single') {
-                const button = document.createElement("button");
-                button.className = "satellite-button btn btn-sm btn-primary"; // Using Bootstrap classes
-                button.innerText = data.fileName;
-                button.setAttribute('data-id', data.fileName);
-                button.setAttribute('data-type', data.fileType);
-                button.onclick = () => {
-                    selectOutputItem(data.fileName, data.fileType);
-                };
-                singleSatButtonsContainer.appendChild(button);
-            }
-        });
-
-        // Add buttons for constellations
-        fileOutputs.forEach(data => {
-            if (data.fileType === 'constellation') {
-                constellationGroup = createConstellationGroup(data.fileName);
-                constellationButtonsContainer.appendChild(constellationGroup);
-            }
-        });
-
-        // Add buttons for all saved ground stations
-        groundStations.forEach(data => {
-            const button = document.createElement("button");
-            button.className = "satellite-button btn btn-sm btn-warning"; // Using Bootstrap classes
-            button.innerText = data.name + " (GS)";
-            button.setAttribute('data-id', data.name);
-            button.setAttribute('data-type', data.fileType);
-            button.onclick = () => {
-                selectOutputItem(data.name, data.fileType);
-            };
-            groundStationButtonsContainer.appendChild(button);
-        });
-
-        // Add buttons for all saved link budget analyses
-        linkBudgetAnalyses.forEach(data => {
-            const button = document.createElement("button");
-            button.className = "satellite-button btn btn-sm btn-danger"; // Using Bootstrap classes
-            button.innerText = data.name + " (LB)";
-            button.setAttribute('data-id', data.name);
-            button.setAttribute('data-type', data.fileType);
-            button.onclick = () => {
-                selectOutputItem(data.name, data.fileType);
-            };
-            linkBudgetButtonsContainer.appendChild(button);
-        });
-
-        // Hide empty categories (optional, but makes UI cleaner)
-        if (singleSatButtonsContainer.children.length === 0) {
-            if (singleSatButtonsContainer.previousElementSibling) singleSatButtonsContainer.previousElementSibling.style.display = 'none'; // Hide heading
-            singleSatButtonsContainer.style.display = 'none'; // Hide container
-        }
-        if (constellationButtonsContainer.children.length === 0) {
-            if (constellationButtonsContainer.previousElementSibling) constellationButtonsContainer.previousElementSibling.style.display = 'none';
-            constellationButtonsContainer.style.display = 'none';
-        }
-        if (groundStationButtonsContainer.children.length === 0) {
-            if (groundStationButtonsContainer.previousElementSibling) groundStationButtonsContainer.previousElementSibling.style.display = 'none';
-            groundStationButtonsContainer.style.display = 'none';
-        }
-        if (linkBudgetButtonsContainer.children.length === 0) {
-            if (linkBudgetButtonsContainer.previousElementSibling) linkBudgetButtonsContainer.previousElementSibling.style.display = 'none';
-            linkBudgetButtonsContainer.style.display = 'none';
-        }
-
-    } else {
-        // If no items exist, hide the entire section and clear any selected state
-        if (satelliteListDisplay) satelliteListDisplay.style.display = 'none';
-        window.selectedSatelliteId = null;
-        window.selectedGroundStationId = null;
-        window.selectedItemType = null;
-        if (satelliteDataDisplay) satelliteDataDisplay.style.display = 'none';
-        if (window.updateOutputSidebar) window.updateOutputSidebar(null);
-        return;
-    }
-
-    // Re-select and highlight the previously selected item on UI refresh
-    let itemToSelectId = null;
-    let itemToSelectType = null;
-
-    // Prioritize previously selected item if it still exists
-    if (window.selectedSatelliteId || window.selectedGroundStationId) {
-        const currentSelectedId = window.selectedSatelliteId || window.selectedGroundStationId;
-        const currentSelectedType = window.selectedItemType; // Assuming this is correctly set
-
-        if (fileOutputs.has(currentSelectedId)) {
-            itemToSelectId = currentSelectedId;
-            itemToSelectType = fileOutputs.get(itemToSelectId).fileType;
-        } else if (groundStations.has(currentSelectedId)) {
-            itemToSelectId = currentSelectedId;
-            itemToSelectType = groundStations.get(itemToSelectId).fileType;
-        } else if (linkBudgetAnalyses.has(currentSelectedId)) {
-            itemToSelectId = currentSelectedId;
-            itemToSelectType = linkBudgetAnalyses.get(itemToSelectId).fileType;
-        } else if (window.activeSatellites && window.activeSatellites.has(currentSelectedId)) {
-            itemToSelectId = currentSelectedId;
-            itemToSelectType = 'single'; // Treat as single for display
-        }
-    }
-
-    // If no previous selection, or previously selected item no longer exists, default to first available
-    if (!itemToSelectId) {
-        if (fileOutputs.size > 0) {
-            const firstSingleSat = Array.from(fileOutputs.values()).find(data => data.fileType === 'single');
-            if (firstSingleSat) {
-                itemToSelectId = firstSingleSat.fileName;
-                itemToSelectType = firstSingleSat.fileType;
-            } else {
-                const firstConstellation = Array.from(fileOutputs.values()).find(data => data.fileType === 'constellation');
-                if (firstConstellation) {
-                    itemToSelectId = firstConstellation.fileName;
-                    itemToSelectType = firstConstellation.fileType;
-                }
-            }
-        } else if (groundStations.size > 0) {
-            itemToSelectId = groundStations.keys().next().value;
-            itemToSelectType = groundStations.get(itemToSelectId).fileType;
-        } else if (linkBudgetAnalyses.size > 0) {
-            itemToSelectId = linkBudgetAnalyses.keys().next().value;
-            itemToSelectType = linkBudgetAnalyses.get(itemToSelectId).fileType;
-        }
-    }
-
-    if (itemToSelectId && itemToSelectType) {
-        selectOutputItem(itemToSelectId, itemToSelectType); // Re-select to update UI and data
-    } else {
-        // If no item is available to select, ensure displays are hidden and buttons cleared
-        window.selectedSatelliteId = null;
-        window.selectedGroundStationId = null;
-        window.selectedItemType = null;
-        if (satelliteDataDisplay) satelliteDataDisplay.style.display = 'none';
-        if (window.updateOutputSidebar) window.updateOutputSidebar(null);
-    }
-}
-
-function createConstellationGroup(fileName) {
-    const constellationGroup = document.createElement("div");
-    constellationGroup.className = "constellation-group";
-
-    const mainButton = document.createElement("button");
-    mainButton.className = "satellite-button constellation-toggle btn btn-sm btn-success";
-    mainButton.innerText = fileName;
-    mainButton.setAttribute('data-id', fileName);
-    mainButton.setAttribute('data-type', 'constellation');
-    mainButton.innerHTML += `<span class="toggle-icon">▼</span>`;
-
-    mainButton.onclick = () => {
-        const memberList = constellationGroup.querySelector('.constellation-members-list');
-        const toggleIcon = mainButton.querySelector('.toggle-icon');
-        if (memberList.classList.contains('hidden')) {
-            memberList.classList.remove('hidden');
-            toggleIcon.innerText = '▲';
-        } else {
-            memberList.classList.add('hidden');
-            toggleIcon.innerText = '▼';
-        }
-        selectOutputItem(fileName, 'constellation');
-    };
-    constellationGroup.appendChild(mainButton);
-
-    const memberList = document.createElement("div");
-    memberList.id = `constellation-${fileName}-members`;
-    memberList.className = "constellation-members-list hidden";
-
-    const constellationData = fileOutputs.get(fileName);
-    if (constellationData && constellationData.satellites) {
-        constellationData.satellites.forEach(satId => {
-            const subButton = createSatelliteButton(satId, 'single');
-            memberList.appendChild(subButton);
-        });
-    }
-    constellationGroup.appendChild(memberList);
-    return constellationGroup;
-}
-
-function createSatelliteButton(id, type) {
-    const button = document.createElement("button");
-    button.className = "satellite-button btn btn-sm btn-info";
-    button.innerText = id;
-    button.setAttribute('data-id', id);
-    button.setAttribute('data-type', type);
-    button.onclick = () => selectOutputItem(id, type);
-    return button;
-}
-
-// Expose functions to the global window object for accessibility from HTML
-window.highlightOutputButton = highlightOutputButton;
-window.updateSatelliteDataDisplay = updateSatelliteDataDisplay;
-window.selectOutputItem = selectOutputItem;
-window.selectSatellite = selectSatellite;
-window.selectGroundStation = selectGroundStation;
-window.updateSatelliteListUI = updateSatelliteListUI; // Make this available globally as it's a main entry point for UI refresh
-
-// Initial load: Load saved data and update UI
-window.onload = function() {
-    const navigationEntries = performance.getEntriesByType('navigation');
-    if (navigationEntries.length > 0 && navigationEntries[0].type === 'reload') {
-        fileOutputs = new Map();
-        groundStations = new Map();
-        linkBudgetAnalyses = new Map();
-        localStorage.removeItem(LOCAL_STORAGE_FILES_KEY);
-        localStorage.removeItem(LOCAL_STORAGE_GROUND_STATIONS_KEY);
-        localStorage.removeItem(LOCAL_STORAGE_LINK_BUDGETS_KEY);
-        clearResourceTab();
-        updateSatelliteListUI(); // Assumed function to update Output Tab
-    } else {
-        loadFilesFromLocalStorage();
-        populateResourceTab();
-        updateSatelliteListUI();
-    }
-};
-
-function clearResourceTab() {
-    document.querySelector('#single-files-list ul').innerHTML = '';
-    document.querySelector('#constellation-files-list ul').innerHTML = '';
-    document.querySelector('#ground-station-resource-list ul').innerHTML = '';
-    document.querySelector('#link-budget-resource-list ul').innerHTML = '';
-}
-
-function populateResourceTab() {
-    clearResourceTab();
-    fileOutputs.forEach((data, fileName) => {
-        addFileToResourceSidebar(fileName, data, data.fileType);
-    });
-    groundStations.forEach((data, name) => {
-        addFileToResourceSidebar(name, data, 'groundStation');
-    });
-    linkBudgetAnalyses.forEach((data, name) => {
-        addFileToResourceSidebar(name, data, 'linkBudget');
-    });
-}
-
-function updateOutputTabForFile(fileName, fileType) {
-    const mainContainer = document.getElementById("satelliteButtonsContainer");
-    mainContainer.innerHTML = ''; // Clear all existing buttons
-
-    if (fileType === 'single') {
-        const data = fileOutputs.get(fileName);
-        if (data) {
-            const button = createSatelliteButton(fileName, 'single');
-            mainContainer.appendChild(button);
-        }
-    } else if (fileType === 'constellation') {
-        const data = fileOutputs.get(fileName);
-        if (data) {
-            const constellationGroup = createConstellationGroup(fileName);
-            mainContainer.appendChild(constellationGroup);
-        }
-    }
-}
-
 
 // --- NEW MENU FUNCTIONS --- 
         window.NewSingleMenu = NewSingleMenu;
@@ -1677,6 +1418,7 @@ function updateOutputTabForFile(fileName, fileType) {
         window.NewGroundStationMenu = NewGroundStationMenu;
         window.NewLinkBudgetMenu = NewLinkBudgetMenu;
         window.showLinkBudgetOutput = showLinkBudgetOutput;
+
 
         function NewSingleMenu() {
             const initialBody = `
@@ -1814,7 +1556,6 @@ function updateOutputTabForFile(fileName, fileType) {
                 const [year, month, day] = datePart.split('-').map(Number);
                 const [hour, minute] = timePart.split(':').map(Number);
                 const utcTimestamp = Date.UTC(year, month - 1, day, hour - utcOffset, minute, 0);
-                //window.currentEpochUTC = utcTimestamp;
 
                 const newData = {
                     fileName, altitude: values.altitude, inclination: values.inclination,
@@ -1837,17 +1578,18 @@ function updateOutputTabForFile(fileName, fileType) {
                 }
 
                 saveFilesToLocalStorage();
+                // Pass the new data to the JavaScript function for scene update
                 if (window.addOrUpdateSatelliteInScene) {
-                    window.addOrUpdateSatelliteInScene(newData);
-                    window.selectedSatelliteId = newData.fileName; // Set selected satellite
+                    window.addOrUpdateSatelliteInScene(newData); //Pass to Javascript
+                    //window.selectedSatelliteId = newData.fileName; // Set selected satellite (Commented if not needed)
                     window.isAnimating = false;
-                    setActiveControlButton('startButton');
+                    setActiveControlButton('pauseButton');
                 }
 
                 // updateOutputSidebar(newData); //(Removed to avoid double update) - Keep commented as selectSatellite handles it
                 addFileToResourceSidebar(fileName, newData, 'single');
-                updateSatelliteListUI();
-                selectSatellite(newData.fileName); // Select and highlight the newly created satellite
+                //updateSatelliteListUI();
+                //selectSatellite(newData.fileName); // Select and highlight the newly created satellite ( To Do :Removed)
                 return true;
             }, () => {
                 document.getElementById('fileNameInput').value = '';
@@ -1873,6 +1615,8 @@ function updateOutputTabForFile(fileName, fileType) {
             }
         }
 
+
+//----------------------------- Toggle Eccentricity Input Functionality--------------------------------
         function toggleEccentricityInput(type) {
             const eccValueContainer = document.getElementById('eccentricityValueContainer');
             const argPerigeeContainer = document.getElementById('argumentOfPerigeeContainer');
@@ -1889,6 +1633,8 @@ function updateOutputTabForFile(fileName, fileType) {
             }
         }
 
+
+//-----------------------------New Constellation Menu Functionality--------------------------------
         function NewConstellationMenu() {
             const initialBody = `
                 <div class="mb-3">
@@ -2031,7 +1777,7 @@ function updateOutputTabForFile(fileName, fileType) {
                                 <input class="form-check-input" type="radio" name="trainOffsetType" id="trainOffsetTypeMeanAnomaly" value="meanAnomaly" checked>
                                 <label class="form-check-label" for="trainOffsetTypeMeanAnomaly">Mean Anomaly</label>
                             </div>
-                            <div v class="form-check form-check-inline">
+                            <div class="form-check form-check-inline">
                                 <input class="form-check-input" type="radio" name="trainOffsetType" id="trainOffsetTypeTrueAnomaly" value="trueAnomaly">
                                 <label class="form-check-label" for="trainOffsetTypeTrueAnomaly">True Anomaly</label>
                             </div>
@@ -2177,9 +1923,10 @@ function updateOutputTabForFile(fileName, fileType) {
                     utcTimestamp: utcTimestamp, // Store the UTC offset for later use
                     beamwidth: values.beamwidth,
                     fileType: 'constellation',
-                    //satellites: [], 
+                    satellites: [], 
                     ...constellationData
                 };
+                //fileOutputs.set(fileName, newData);
 
                 if (editingFileName) {
                     const oldData = { ...fileOutputs.get(editingFileName) };
@@ -2194,16 +1941,18 @@ function updateOutputTabForFile(fileName, fileType) {
 
                 // If the viewSimulation function exists, call it with the new data
                 if (window.viewSimulation) {
-                    window.viewSimulation(newData);
+                    window.viewSimulation(newData); //Pass to Javascript
+                    //window.selectedSatelliteId = newData.fileName; // Set selected satellite (Commented if not needed)
+                    // If constellations are not selected, clear the selectedSatelliteId
                     window.selectedSatelliteId = null; // Clear selected satellite for constellations
                     window.isAnimating = false;
-                    setActiveControlButton('startButton');
+                    setActiveControlButton('pauseButton');
                 }
 
                 // updateOutputSidebar(newData); //(Removed to avoid duplicate updates) - Keep commented as selectOutputItem handles it
                 addFileToResourceSidebar(fileName, newData, 'constellation');
-                updateSatelliteListUI();
-                // No direct selectOutputItem for constellation as it's a group, individual sats are selected
+                populateReportsList();
+                //updateSatelliteListUI();
                 return true;
             }, () => {
                 document.getElementById('fileNameInput').value = '';
@@ -2222,8 +1971,8 @@ function updateOutputTabForFile(fileName, fileType) {
                 document.getElementById('numSatellitesInput').value = '';
                 document.getElementById('separationTypeMeanAnomaly').checked = true;
                 document.getElementById('separationValueInput').value = '';
-                document.getElementById('trainDirectionForward').checked = true;
-                document.getElementById('trainDirectionBackward').checked = true;
+                document.getElementById('trainDirectionForward').checked = false; 
+                document.getElementById('trainDirectionBackward').checked = true; // Default to backward direction  
                 document.getElementById('trainStartLocationSame').checked = true;
                 toggleTrainOffset(false);
                 document.getElementById('numPlanesInput').value = '';
@@ -2339,12 +2088,12 @@ function updateOutputTabForFile(fileName, fileType) {
                 saveFilesToLocalStorage();
                 if (window.addOrUpdateGroundStationInScene) {
                     window.addOrUpdateGroundStationInScene(newData);
-                    window.selectedGroundStationId = newData.id; // Set selected ground station
+                    //window.selectedGroundStationId = newData.id; // Set selected ground station
                 }
                 // updateOutputSidebar(newData); // Keep commented as selectGroundStation handles it
                 addFileToResourceSidebar(gsName, newData, 'groundStation');
-                updateSatelliteListUI();
-                selectGroundStation(newData.id); // Select and highlight the newly created ground station
+                //updateSatelliteListUI();
+                //selectGroundStation(newData.id); // Select and highlight the newly created ground station
                 return true;
             }, () => {
                 document.getElementById('gsNameInput').value = '';
@@ -2424,7 +2173,7 @@ function updateOutputTabForFile(fileName, fileType) {
                 const lbName = document.getElementById('lbNameInput').value.trim();
 
                 if (!lbName) { showInputError('lbNameInput', "Analysis Name cannot be empty."); hasError = true; }
-                else if (linkBudgetAnalyses.has(lbName) && !editingFileName) {
+                else if (linkBudgetAnalysis.has(lbName) && !editingFileName) {
                     showInputError('lbNameInput', `Analysis Name "${lbName}" already exists. Please use a different name.`); hasError = true;
                 } else { clearInputError('lbNameInput'); }
 
@@ -2525,24 +2274,27 @@ function updateOutputTabForFile(fileName, fileType) {
                 // Here, we save the data to our linkBudgetAnalyses map
                 // If it's an existing file being edited, update it. Otherwise, add new.
                 if (isEditing) {
-                    const oldData = { ...linkBudgetAnalyses.get(data.name) };
+                    const oldData = { ...linkBudgetAnalysis.get(data.name) };
                     recordAction({ type: 'editFile', fileName: data.name, fileType: 'linkBudget', oldData: oldData, newData: data });
-                    linkBudgetAnalyses.set(data.name, data);
+                    linkBudgetAnalysis.set(data.name, data);
                 } else {
                     recordAction({ type: 'addFile', fileName: data.name, fileData: data, fileType: 'linkBudget' });
-                    linkBudgetAnalyses.set(data.name, data);
+                    linkBudgetAnalysis.set(data.name, data);
                 }
                 saveFilesToLocalStorage();
                 addFileToResourceSidebar(data.name, data, 'linkBudget');
-                updateSatelliteListUI();
-                selectOutputItem(data.name, 'linkBudget'); // Select and highlight the newly saved/edited LB
+               // updateSatelliteListUI();
+                //selectOutputItem(data.name, 'linkBudget'); // Select and highlight the newly saved/edited LB
                 modal.hide(); // Hide the output modal after saving
             };
 
             modal.show();
         }
 
+        
 // --- EDIT MENU FUNCTIONS (triggered by double-click on resource items) ---
+    window.editFile = editFile;
+    window.deleteFile = deleteFile;
     window.editSingleParameter = editSingleParameter;
     window.editConstellationParameter = editConstellationParameter;
     window.editGroundStation = editGroundStation;
@@ -2702,14 +2454,14 @@ function updateOutputTabForFile(fileName, fileType) {
             fileOutputs.set(currentFileName, updatedData);
             saveFilesToLocalStorage();
 
-            if (window.addOrUpdateSatelliteInScene) {
-                window.addOrUpdateSatelliteInScene(updatedData);
+            if (window.viewSimulation) {
+                window.viewSimulation(updatedData);
             }
 
-            updateOutputSidebar(updatedData);
+            //updateOutputSidebar(updatedData);
             addFileToResourceSidebar(currentFileName, updatedData, 'single');
-            updateSatelliteListUI();
-            selectSatellite(currentFileName);
+            //updateSatelliteListUI();
+            //selectSatellite(currentFileName);
             return true;
         }, null, fileName, 'single');
 
@@ -3033,6 +2785,7 @@ function updateOutputTabForFile(fileName, fileType) {
                 epoch: epochInput,
                 utcTimestamp : utcTimestamp,
                 beamwidth: values.beamwidth,
+                satellites: [],
                 fileType: 'constellation',
                 ...constellationData
             };
@@ -3044,12 +2797,11 @@ function updateOutputTabForFile(fileName, fileType) {
 
             if (window.viewSimulation) {
                 window.viewSimulation(updatedData);
-                setActiveControlButton('startButton');
             }
 
-            updateOutputSidebar(updatedData);
+            //updateOutputSidebar(updatedData);
             addFileToResourceSidebar(currentFileName, updatedData, 'constellation');
-            updateSatelliteListUI();
+            //updateSatelliteListUI();
             return true;
         }, () => { // Reset function
             document.getElementById('fileNameInput').value = dataToEdit.fileName;
@@ -3278,10 +3030,13 @@ function updateOutputTabForFile(fileName, fileType) {
             recordAction({ type: 'editFile', fileName: currentName, fileType: 'groundStation', oldData: oldData, newData: updatedData });
             groundStations.set(currentName, updatedData);
             saveFilesToLocalStorage();
-            if (window.addOrUpdateGroundStationInScene) {
+            // RE-RENDER UPDATED GROUND STATION IMMEDIATELY
+            if (window.viewSimulation) {
+                window.viewSimulation(updatedData);
+            } else if (window.addOrUpdateGroundStationInScene) {
                 window.addOrUpdateGroundStationInScene(updatedData);
             }
-            updateOutputSidebar(updatedData);
+            //updateOutputSidebar(updatedData);
             addFileToResourceSidebar(currentName, updatedData, 'groundStation');
             return true;
         }, null, name, 'groundStation');
@@ -3294,7 +3049,7 @@ function updateOutputTabForFile(fileName, fileType) {
     }
 
     function editLinkBudget(name) {
-        const dataToEdit = linkBudgetAnalyses.get(name);
+        const dataToEdit = linkBudgetAnalysis.get(name);
         if (!dataToEdit) { showCustomAlert("Link Budget Analysis data not found."); return; }
 
         // Re-use the NewLinkBudgetMenu modal body and logic
@@ -3339,92 +3094,6 @@ if (typeof window.setActiveControlButton === 'undefined') {
         // Implement actual button highlighting here
     };
 }
-
-// Placeholder for deleteFile function if not defined elsewhere
-if (typeof window.deleteFile === 'undefined') {
-    window.deleteFile = function(fileName, fileType) {
-        showCustomConfirmation(`Are you sure you want to delete ${fileName}?`, 'Confirm Delete', 'Delete', () => {
-            if (fileType === 'single' || fileType === 'constellation') {
-                const dataToDelete = fileOutputs.get(fileName);
-                if (dataToDelete && dataToDelete.satellites) {
-                    // If it's a constellation, remove all its satellites from activeSatellites
-                    dataToDelete.satellites.forEach(satId => {
-                        window.removeObjectFromScene(satId, 'satellite');
-                    });
-                } else if (fileType === 'single') {
-                    // If it's a single satellite, remove it from activeSatellites
-                    window.removeObjectFromScene(fileName, 'satellite');
-                }
-                fileOutputs.delete(fileName);
-            } else if (fileType === 'groundStation') {
-                window.removeObjectFromScene(fileName, 'groundStation');
-                groundStations.delete(fileName);
-            } else if (fileType === 'linkBudget') {
-                linkBudgetAnalyses.delete(fileName);
-            }
-            saveFilesToLocalStorage();
-            updateSatelliteListUI(); // Refresh UI after deletion
-            // If the deleted item was selected, clear the output sidebar
-            if (window.selectedItemType === fileType && (window.selectedSatelliteId === fileName || window.selectedGroundStationId === fileName)) {
-                window.selectedSatelliteId = null;
-                window.selectedGroundStationId = null;
-                window.selectedItemType = null;
-                updateOutputSidebar(null);
-            }
-        }, true);
-    };
-}
-
-window.deleteFile = deleteFile;
-        // --------------------------------------------- DELETE FUNCTION -------------------------------------------
-
-        function deleteFile(fileName, fileType) {
-            showCustomConfirmation(
-                `Are you sure you want to delete "${fileName}"?`,
-                "Konfirmasi Penghapusan",
-                "OK",
-                () => {
-                    let fileDataToDelete;
-                    if (fileType === 'single' || fileType === 'constellation') {
-                        fileDataToDelete = { ...fileOutputs.get(fileName) };
-                        fileOutputs.delete(fileName);
-                        if (window.removeObjectFromScene) window.removeObjectFromScene(fileName, 'satellite');
-                    } else if (fileType === 'groundStation') {
-                        fileDataToDelete = { ...groundStations.get(fileName) };
-                        groundStations.delete(fileName);
-                        if (window.removeObjectFromScene) window.removeObjectFromScene(fileName, 'groundStation');
-                    } else if (fileType === 'linkBudget') {
-                        fileDataToDelete = { ...linkBudgetAnalyses.get(fileName) };
-                        linkBudgetAnalyses.delete(fileName);
-                        // No 3D object to remove for link budget
-                    }
-
-                    recordAction({
-                        type: 'deleteFile',
-                        fileName: fileName,
-                        fileType: fileType,
-                        fileData: fileDataToDelete
-                    });
-
-                    saveFilesToLocalStorage();
-
-                    const listItem = document.querySelector(`li[data-file-name="${fileName}"][data-file-type="${fileType}"]`);
-                    if (listItem) {
-                        listItem.remove();
-                    }
-
-                    const outputMenu = document.getElementById('output-menu').querySelector('ul');
-                    const displayedFileNameElement = outputMenu.querySelector('.output-file-name');
-                    if (displayedFileNameElement && displayedFileNameElement.textContent.includes(fileName)) {
-                        updateOutputSidebar(null); // Clear displayed data if it was the deleted item
-                    }
-                    updateSatelliteListUI(); // Re-render satellite list if any changes (e.g., if deleted selected one)
-                },
-                true // Show cancel button
-            );
-        }
-// --------------------------------------------- END DELETE FUNCTION -------------------------------------------
-
 
 // ----------------------------------------- VIEW MENU FUNCTIONS ---------------------------------------------
         window.toggle2DView = toggle2DView;
@@ -3605,151 +3274,224 @@ window.deleteFile = deleteFile;
 window.showSavePopup            = showSavePopup;
 window.generateAndSaveSelected = generateAndSaveSelected;
 
-// Show a popup with checkboxes for every “single” or “constellation” in fileOutputs
+// Show the “Save” dialog
 function showSavePopup() {
-        document.querySelectorAll('.custom-popup').forEach(el=>el.remove());
-        const popup = document.createElement('div');
-        popup.className = 'custom-popup';
-        Object.assign(popup.style, {
-            position: 'absolute', left: '50%', top: '50%',
-            transform: 'translate(-50%,-50%)',
-            background: '#fff', padding: '20px',
-            border: '1px solid #ccc', 'zIndex':1000
-        });
+  // remove any existing popup
+  document.querySelectorAll('.custom-popup').forEach(el=>el.remove());
 
-        let html = `<h5>Select items to save:</h5>
-            <ul style="list-style:none;padding:0;">`;
+  // gather list of selectable satellites
+  const sats = [];
+  window.activeSatellites.forEach((sat, id) => {
+    sats.push({ id, name: sat.name, startEpoch: sat.initialEpochUTC });
+  });
+  if (!sats.length) {
+    const popup = document.createElement('div');
+    popup.className = 'custom-popup';
+    popup.innerHTML = `<p>No active satellites to save.</p>`;
+    document.body.appendChild(popup);
+    return;
+  }
 
-        let hasSingle = false, hasConst = false;
-        fileOutputs.forEach(data=>{
-            if (data.fileType==='single')       hasSingle      = true;
-            if (data.fileType==='constellation') hasConst       = true;
-        });
-        if (hasSingle) {
-            html += `<li><strong>Single Satellites</strong>
-            <ul style="padding-left:20px;">`;
-            fileOutputs.forEach((data,name)=>{
-            if (data.fileType==='single') {
-                html += `<li>
-                <label>
-                    <input type="checkbox" data-type="single" value="${name}">
-                    ${name}
-                </label>
-                </li>`;
-            }
-            });
-            html += `</ul></li>`;
-        }
-        if (hasConst) {
-            html += `<li><strong>Constellations</strong>
-            <ul style="padding-left:20px;">`;
-            fileOutputs.forEach((data,name)=>{
-            if (data.fileType==='constellation') {
-                html += `<li>
-                <label>
-                    <input type="checkbox" data-type="constellation" value="${name}">
-                    ${name}
-                </label>
-                </li>`;
-            }
-            });
-            html += `</ul></li>`;
-        }
-        html += `</ul>
-            <div style="text-align:right;margin-top:1em">
-            <button onclick="document.querySelector('.custom-popup').remove()">Close</button>
-            <button onclick="generateAndSaveSelected()">Save</button>
-            </div>`;
+  // build popup container
+  const popup = document.createElement('div');
+  popup.className = 'custom-popup';
+  Object.assign(popup.style, {
+    position: 'absolute', left: '50%', top: '50%',
+    transform: 'translate(-50%,-50%)',
+    background: '#fff', color:'#000',
+    padding: '20px', border: '1px solid #ccc', zIndex:10000,
+    width: '360px',
+  });
 
-        popup.innerHTML = html;
-        document.body.appendChild(popup);
+  // helper: ms → datetime-local string
+  const fmtLocal = ms => {
+    const dt = new Date(ms);
+    const pad = n=> String(n).padStart(2,'0');
+    return `${dt.getFullYear()}-${pad(dt.getMonth()+1)}-${pad(dt.getDate())}` +
+           `T${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
+  };
+
+  // build HTML
+  popup.innerHTML = `
+    <h5>Select Satellite & Interval</h5>
+    <label>Satellite:</label>
+    <select id="saveSatSelect" class="form-control mb-2">
+      ${sats.map(s=>
+        `<option value="${s.id}" data-start="${s.startEpoch}">
+           ${s.name}
+         </option>`
+      ).join('')}
+    </select>
+    <label>Start Time:</label>
+    <input type="datetime-local" id="saveStartTime" class="form-control mb-2" disabled/>
+    <label>End Time:</label>
+    <input type="datetime-local" id="saveEndTime" class="form-control mb-2"/>
+    <label>Sampling Interval:</label>
+    <select id="saveStep" class="form-control mb-2">
+      <option value="1">1 second</option>
+      <option value="10">10 seconds</option>
+      <option value="60">1 minute</option>
+      <option value="600">10 minutes</option>
+      <option value="3600">1 hour</option>
+    </select>
+    <label>Format:</label>
+    <div class="mb-3">
+      <label class="form-check-label me-3">
+        <input type="radio" name="saveFormat" value="coordinates" checked> Coordinates
+      </label>
+      <label class="form-check-label me-3">
+        <input type="radio" name="saveFormat" value="tle"> TLE
+      </label>
+      <select id="saveFileExt" class="form-select form-select-sm w-auto d-inline-block">
+        <option value="csv" selected>.csv</option>
+        <option value="txt">.txt</option>
+      </select>
+    </div>
+    <div class="text-end">
+      <button class="btn btn-secondary btn-sm" id="saveCancel">Cancel</button>
+      <button class="btn btn-primary btn-sm" id="saveDoIt">Save</button>
+    </div>
+  `;
+
+  document.body.appendChild(popup);
+
+  const satSelect  = popup.querySelector('#saveSatSelect');
+  const startInput = popup.querySelector('#saveStartTime');
+  const endInput   = popup.querySelector('#saveEndTime');
+  const fmtRadios  = popup.querySelectorAll('input[name=saveFormat]');
+  const extSelect  = popup.querySelector('#saveFileExt');
+
+  // when SAT changes, update start/end constraints
+  function refreshTimes() {
+    const opt = satSelect.selectedOptions[0];
+    const startMs = Number(opt.dataset.start);
+    const iso     = fmtLocal(startMs);
+    startInput.value = iso;
+    endInput.min     = iso;
+    if (endInput.value < iso) endInput.value = iso;
+  }
+  satSelect.addEventListener('change', refreshTimes);
+  refreshTimes();
+
+  // show/hide ext chooser depending on format
+  function toggleExt() {
+    extSelect.style.display =
+      popup.querySelector('input[name=saveFormat]:checked').value === 'coordinates'
+        ? 'inline-block'
+        : 'none';
+  }
+  fmtRadios.forEach(r=>r.addEventListener('change', toggleExt));
+  toggleExt();
+
+  popup.querySelector('#saveCancel').onclick = ()=> popup.remove();
+  popup.querySelector('#saveDoIt').onclick   = ()=> generateAndSaveSelected(popup);
 }
 
-// Main save/export routine
-function generateAndSaveSelected() {
-        const picked = [];
-        document.querySelectorAll('.custom-popup input:checked').forEach(ch=>{
-            picked.push({ name: ch.value, type: ch.dataset.type });
-        });
-        if (!picked.length) {
-            alert("Select at least one item.");
-            return;
-        }
+// Generate & download the file
+function generateAndSaveSelected(popup) {
+  const satId   = popup.querySelector('#saveSatSelect').value;
+  const startTs = new Date(popup.querySelector('#saveStartTime').value).getTime();
+  const endTs   = new Date(popup.querySelector('#saveEndTime').value).getTime();
+  const step    = parseInt(popup.querySelector('#saveStep').value,10)*1000;
+  const fmt     = popup.querySelector('input[name=saveFormat]:checked').value;
+  const fileExt = popup.querySelector('#saveFileExt')?.value || 'csv';
 
-        // Build a single text blob: for TLE-equipped sats we dump TLE lines, 
-        // others we generate a minimal Two-Line format from their orbital params 
-        let txt = '';
-        picked.forEach(item=>{
-            const data = fileOutputs.get(item.name);
-            if (!data) return;
+  if (!satId || isNaN(endTs) || endTs < startTs) {
+    return alert('Please pick a valid end time (≥ start time).');
+  }
+  const sat = window.activeSatellites.get(satId);
+  if (!sat) return alert('Satellite not found.');
 
-            if (item.type==='single' && data.tleLine1 && data.tleLine2) {
-            // real TLE
-            txt += data.tleLine1 + '\n' + data.tleLine2 + '\n';
-            }
-            else if (item.type==='single') {
-            // fallback "fake TLE" from elements
-            txt += makePseudoTle(item.name, data) + '\n';
-            }
-            else if (item.type==='constellation' && data.satellites) {
-            data.satellites.forEach(satName=>{
-                const sat = fileOutputs.get(satName);
-                if (sat && sat.tleLine1 && sat.tleLine2) {
-                txt += sat.tleLine1 + '\n' + sat.tleLine2 + '\n';
-                }
-                else if (sat) {
-                txt += makePseudoTle(satName, sat) + '\n';
-                }
-            });
-            }
-        });
+  // ----- TLE export -----
+  if (fmt === 'tle') {
+    let txt = '';
+    if (sat.tleLine1 && sat.tleLine2) {
+      txt = sat.tleLine1 + "\n" + sat.tleLine2 + "\n";
+    } else {
+      // fallback pseudo‐TLE (ensure you have makePseudoTle in scope)
+      txt = makePseudoTle(sat.name, {
+        epoch:             sat.initialEpochUTC,
+        inclination:       sat.params.inclinationRad*(180/Math.PI),
+        raan:              sat.currentRAAN*(180/Math.PI),
+        eccentricity:      sat.params.eccentricity,
+        argumentOfPerigee: sat.params.argPerigeeRad*(180/Math.PI),
+        trueAnomaly:       sat.currentTrueAnomaly*(180/Math.PI),
+        altitude:          (sat.mesh.position.length()*EarthRadius/SCENE_EARTH_RADIUS) - EarthRadius
+      }) + "\n";
+    }
+    downloadText(`sat_${sat.name}.tle`, txt);
+    popup.remove();
+    return;
+  }
 
-        const blob = new Blob([txt], {type:'text/plain'});
-        const url  = URL.createObjectURL(blob);
-        const a    = document.createElement('a');
-        a.href     = url;
-        a.download = 'satellite_orbits.txt';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+  // ----- Coordinates export -----
+  const lines = [];
+  const altKm = (sat.mesh.position.length()*EarthRadius/SCENE_EARTH_RADIUS) - EarthRadius;
+  const { orbitalPeriod } = calculateDerivedOrbitalParameters(
+    (sat.params.semiMajorAxis - SCENE_EARTH_RADIUS)*(EarthRadius/SCENE_EARTH_RADIUS),
+    sat.params.eccentricity
+  );
 
-        document.querySelector('.custom-popup').remove();
-        alert("Orbit data saved as satellite_orbits.txt");
+  if (fileExt === 'txt') {
+    // tab-delimited header
+    lines.push(`Satellite Name:\t${sat.name}`);
+    lines.push(`Start Time:\t${new Date(startTs).toISOString()}`);
+    lines.push(`Stop Time:\t${new Date(endTs).toISOString()}`);
+    lines.push(`UTC Offset:\t0`);
+    lines.push(`Altitude (km):\t${altKm.toFixed(3)}`);
+    lines.push(`Inclination (°):\t${(sat.params.inclinationRad*180/Math.PI).toFixed(3)}`);
+    lines.push(`Orbital Period (min):\t${(orbitalPeriod/60).toFixed(3)}`);
+    lines.push(`Orbit Type:\t${sat.params.eccentricity<1e-3?'Circular':'Elliptical'}`);
+    lines.push('');
+    lines.push(`Longitude\tLatitude\tTime (UTC)\tElapsed(s)`);
+  } else {
+    // comma-separated CSV
+    lines.push(`Satellite Name:,${sat.name}`);
+    lines.push(`Start Time:,${new Date(startTs).toISOString()}`);
+    lines.push(`Stop Time:,${new Date(endTs).toISOString()}`);
+    lines.push(`UTC Offset:,0`);
+    lines.push(`Altitude (km):,${altKm.toFixed(3)}`);
+    lines.push(`Inclination (°):,${(sat.params.inclinationRad*180/Math.PI).toFixed(3)}`);
+    lines.push(`Orbital Period (min):,${(orbitalPeriod/60).toFixed(3)}`);
+    lines.push(`Orbit Type:,${sat.params.eccentricity<1e-3?'Circular':'Elliptical'}`);
+    lines.push('');
+    lines.push(`Longitude,Latitude,Time (UTC),Elapsed(s)`);
+  }
+
+  // step through the simulation
+  const core     = window.getSimulationCoreObjects();
+  const oldTime  = core.totalSimulatedTime;
+  const oldEpoch = core.currentEpochUTC;
+
+  for (let t = startTs; t <= endTs; t += step) {
+    const simSec = (t - sat.initialEpochUTC)/1000;
+    core.setTotalSimulatedTime(simSec);
+    core.setCurrentEpochUTC(sat.initialEpochUTC);
+    sat.updatePosition(simSec, 0);
+
+    const { latitudeDeg: lat, longitudeDeg: lon } = sat;
+    const elapsed = Math.round((t - startTs)/1000);
+
+    if (fileExt === 'txt') {
+      lines.push(`${lon.toFixed(6)}\t${lat.toFixed(6)}\t${new Date(t).toISOString()}\t${elapsed}`);
+    } else {
+      lines.push(`${lon.toFixed(6)},${lat.toFixed(6)},${new Date(t).toISOString()},${elapsed}`);
+    }
+  }
+
+  // restore simulation state
+  core.setTotalSimulatedTime(oldTime);
+  core.setCurrentEpochUTC(oldEpoch);
+  sat.updatePosition(oldTime, 0);
+
+  // download
+  const ext = fmt==='coordinates' ? `.${fileExt}` : '.tle';
+  downloadText(`sat_${sat.name}${ext}`, lines.join('\n') + '\n');
+  popup.remove();
 }
 
-// Build a very simple, pseudo‐TLE two-line element set from Keplerian inputs.
-// You can refine field widths & checksums as needed.
-function makePseudoTle(name, d) {
-        // Line 0: name
-        let L0 = name.padEnd(24).slice(0,24);
 
-        // Line 1 placeholder: NORAD cat=0, epoch YYDDD.DDDDD
-        const dt = new Date(d.epoch);
-        const year = dt.getUTCFullYear()%100;
-        const start = new Date(Date.UTC(dt.getUTCFullYear(),0,1));
-        const doy = ((dt - start)/(1000*86400)) + 1;
-        const epochStr = year.toString().padStart(2,'0')
-            + doy.toFixed(5).padStart(8,'0');
-
-        let line1 = `1 ${'00000'}U 00000   ${epochStr} .00000000  00000-0  00000-0 0  9991`;
-        // Line 2: i, Ω, e, ω, M, n
-        const i  = (d.inclination||0).toFixed(4).padStart(8,' ');
-        const raan = (d.raan||0).toFixed(4).padStart(8,' ');
-        const e  = ((d.eccentricity||0)*1e7).toFixed(0).padStart(7,'0');
-        const ap = (d.argumentOfPerigee||0).toFixed(4).padStart(8,' ');
-        const M  = (d.trueAnomaly||0).toFixed(4).padStart(8,' ');
-        // mean motion: n = sqrt(μ/a^3)*86400/(2π)
-        const a_km  = (d.altitude || 0) + 6378.137;
-        const μ = 398600.4418;
-        const n = (Math.sqrt(μ/Math.pow(a_km,3))*86400/(2*Math.PI)).toFixed(8).padStart(11,' ');
-        let line2 = `2 00000 ${i} ${raan} ${e} ${ap} ${M} ${n}    00`;
-
-        return L0 + '\n' + line1 + '\n' + line2;
-}
 // ------------------------------------- END SAVE MENU FUNCTIONS ---------------------------------------------
-
-
 
   // ------------------------------------- LOAD TLE FUNCTION ------------------------------------------------
   // assumes parseTle is globally available (imported in your 3D code)
@@ -4143,9 +3885,9 @@ function makePseudoTle(name, d) {
             }
             saveFilesToLocalStorage();
             addFileToResourceSidebar(fileName, oldData, fileType); // Re-add/update sidebar entry
-            updateOutputSidebar(oldData); // Update output display
-            updateSatelliteListUI(); // Refresh UI lists
-            selectSatellite(fileName); // Re-select to update data display (for satellites)
+            // updateOutputSidebar(oldData); // Update output display
+            // updateSatelliteListUI(); // Refresh UI lists
+            // selectSatellite(fileName); // Re-select to update data display (for satellites)
         }
 
 
@@ -4162,9 +3904,9 @@ function makePseudoTle(name, d) {
             }
             saveFilesToLocalStorage();
             addFileToResourceSidebar(fileName, newData, fileType); // Re-add/update sidebar entry
-            updateOutputSidebar(newData); // Update output display
-            updateSatelliteListUI(); // Refresh UI lists
-            selectSatellite(fileName); // Re-select to update data display (for satellites)
+            //updateOutputSidebar(newData); // Update output display
+           // updateSatelliteListUI(); // Refresh UI lists
+            //selectSatellite(fileName); // Re-select to update data display (for satellites)
         }
         
         // Undo function to revert the last action
@@ -4204,11 +3946,9 @@ function makePseudoTle(name, d) {
                     default:
                         console.warn("Unknown action type for undo:", action.type);
                 }
-                updateSatelliteListUI(); // Ensure UI lists are up to date after undo/redo
+                //updateSatelliteListUI(); // Ensure UI lists are up to date after undo/redo
                 // Attempt to re-select the original selected item if it still exists
-                const currentSelectedData = fileOutputs.get(window.selectedSatelliteId) || groundStations.get(window.selectedSatelliteId) || linkBudgetAnalyses.get(window.selectedSatelliteId);
-                if (currentSelectedData) updateOutputSidebar(currentSelectedData);
-                else updateOutputSidebar(null);
+                const currentSelectedData = fileOutputs.get(window.selectedSatelliteId) || groundStations.get(window.selectedSatelliteId) || linkBudgetAnalysis.get(window.selectedSatelliteId);
             } else {
                 showCustomAlert("Tidak ada tindakan untuk diurungkan.");
             }
@@ -4251,10 +3991,9 @@ function makePseudoTle(name, d) {
                     default:
                         console.warn("Unknown action type for redo:", action.type);
                 }
-                updateSatelliteListUI(); // Ensure UI lists are up to date after undo/redo
-                const currentSelectedData = fileOutputs.get(window.selectedSatelliteId) || groundStations.get(window.selectedSatelliteId) || linkBudgetAnalyses.get(window.selectedSatelliteId);
-                if (currentSelectedData) updateOutputSidebar(currentSelectedData);
-                else updateOutputSidebar(null);
+                //updateSatelliteListUI(); // Ensure UI lists are up to date after undo/redo
+                const currentSelectedData = fileOutputs.get(window.selectedSatelliteId) || groundStations.get(window.selectedSatelliteId) || linkBudgetAnalysis.get(window.selectedSatelliteId);
+            
             } else {
                 showCustomAlert("Tidak ada tindakan untuk diulang.");
             }
@@ -4312,20 +4051,49 @@ function makePseudoTle(name, d) {
                 appHistoryIndex = -1;
             }
 
-                    // --- Attach Event Listeners for Menu Items ---
-        document.getElementById('newSingleMenuBtn')?.addEventListener('click', NewSingleMenu);
-        document.getElementById('newConstellationMenuBtn')?.addEventListener('click', NewConstellationMenu);
-        document.getElementById('newGroundStationMenuBtn')?.addEventListener('click', NewGroundStationMenu);
-        document.getElementById('newLinkBudgetMenuBtn')?.addEventListener('click', NewLinkBudgetMenu);
+            // --- Attach Event Listeners for Menu Items ---
+            // New menu items
+        document.getElementById('newSingleMenuBtn')?.addEventListener('click', function(event) {
+            event.preventDefault();
+            NewSingleMenu();
+        });
+        document.getElementById('newConstellationMenuBtn')?.addEventListener('click', function(event) {
+            event.preventDefault();
+            NewConstellationMenu();
+        });
+        document.getElementById('newGroundStationMenuBtn')?.addEventListener('click', function(event) {
+            event.preventDefault();
+            NewGroundStationMenu();
+        });
+        document.getElementById('newLinkBudgetMenuBtn')?.addEventListener('click', function(event) {
+            event.preventDefault();
+            NewLinkBudgetMenu();
+        });
 
         // --- Attach Event Listeners for View Menu Items ---
-        document.getElementById('resetViewBtn')?.addEventListener('click', resetView); // Assuming ID for reset view
-        document.getElementById('closeViewButton')?.addEventListener('click', toggleCloseView); 
-        document.getElementById('toggle2DViewBtn')?.addEventListener('click', toggle2DView); // Assuming ID for 2D view
+       // View menu items
+        document.getElementById('resetViewBtn')?.addEventListener('click', function(event) {
+            event.preventDefault();
+            resetView();
+        });
+        document.getElementById('closeViewButton')?.addEventListener('click', function(event) {
+            event.preventDefault();
+            toggleCloseView();
+        });
+        document.getElementById('toggle2DViewBtn')?.addEventListener('click', function(event) {
+            event.preventDefault();
+            toggle2DView();
+        });
 
-        // --- Attach Event Listeners for Save Menu Items ---
-        document.getElementById('showSavePopupBtn')?.addEventListener('click', showSavePopup); // Assuming ID for save popup
-        document.getElementById('loadTleBtn')?.addEventListener('click', LoadTLE); // Assuming ID for Load TLE
+        // Save menu items
+        document.getElementById('showSavePopupBtn')?.addEventListener('click', function(event) {
+            event.preventDefault();
+            showSavePopup();
+        });
+        document.getElementById('loadTleBtn')?.addEventListener('click', function(event) {
+            event.preventDefault();
+            LoadTLE();
+        });
 
         // --- Attach Event Listeners for Toolbar Buttons ---
         document.getElementById('startButton')?.addEventListener('click', playAnimation);
@@ -4355,22 +4123,22 @@ function makePseudoTle(name, d) {
                     window.load3DSimulationState(); // Call the exposed loading function to create 3D meshes
                     
                     // After 3D objects are loaded, update the UI lists and selected satellite display
-                    updateSatelliteListUI(); // This will handle selecting the first item and updating its display
+                   // updateSatelliteListUI(); // This will handle selecting the first item and updating its display
 
                     // Initialize the output sidebar with buttons for the initially selected item
-                    let initialSelectedData = null;
-                    if (window.selectedSatelliteId && window.activeSatellites.has(window.selectedSatelliteId)) {
-                        initialSelectedData = fileOutputs.get(window.selectedSatelliteId);
-                    } else if (window.activeGroundStations.size > 0) {
-                        initialSelectedData = groundStations.values().next().value;
-                    }
-                    updateOutputSidebar(initialSelectedData); // Pass the data to show buttons
+                    // let initialSelectedData = null;
+                    // if (window.selectedSatelliteId && window.activeSatellites.has(window.selectedSatelliteId)) {
+                    //     initialSelectedData = fileOutputs.get(window.selectedSatelliteId);
+                    // } else if (window.activeGroundStations.size > 0) {
+                    //     initialSelectedData = groundStations.values().next().value;
+                    // }
+                    //updateOutputSidebar(initialSelectedData); // Pass the data to show buttons
 
                 } else {
                     console.error("Critical: load3DSimulationState function not found. Earth3Dsimulation.js might not be loaded or exposed correctly.");
                     // Fallback UI updates even if 3D initialization fails
-                    updateSatelliteListUI();
-                    updateOutputSidebar(null); // Clear buttons if 3D not ready
+                    //updateSatelliteListUI();
+                    //updateOutputSidebar(null); // Clear buttons if 3D not ready
                 }
                 updateAnimationDisplay(); // Make sure initial animation status is correct
                 setActiveControlButton(window.isAnimating ? 'startButton' : 'pauseButton'); // Set correct button state
