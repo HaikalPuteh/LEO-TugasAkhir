@@ -7,6 +7,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
 
     @vite([
         'resources/js/Earth2Dsimulation.js',
@@ -106,6 +107,14 @@
             font-weight: normal;
             padding-left: 1rem;
             color: black;
+        }
+
+        #resource-menu #single-files-list ul li:hover,
+        #resource-menu #constellation-files-list ul li:hover,
+        #resource-menu #ground-station-resource-list ul li:hover,
+        #resource-menu #link-budget-resource-list ul li:hover {
+            background-color: #e0e0e0; /* Sesuaikan warna jika perlu */
+            cursor: pointer;
         }
 
         #satellite-resource-list,
@@ -338,6 +347,12 @@
             font-size: 1em;
             color: #333;
             text-align: center;
+        }
+
+        .modal-content p,
+        .modal-content h5,
+        .modal-content strong {
+            color: black !important; /* Paksa warna teks menjadi hitam */
         }
 
         .custom-alert-footer {
@@ -612,10 +627,28 @@
                 const clickedFileName = this.dataset.fileName;
                 const clickedFileType = this.dataset.fileType;
                 let dataForButtons;
-                if (clickedFileType === 'single' || clickedFileType === 'constellation') dataForButtons = fileOutputs.get(clickedFileName);
-                else if (clickedFileType === 'groundStation') dataForButtons = groundStations.get(clickedFileName);
-                else if (clickedFileType === 'linkBudget') dataForButtons = linkBudgetAnalysis.get(clickedFileName);
-                if (dataForButtons) window.viewSimulation(dataForButtons);
+
+                // Ambil data yang benar berdasarkan tipe file
+                if (clickedFileType === 'single' || clickedFileType === 'constellation') {
+                    dataForButtons = fileOutputs.get(clickedFileName);
+                } else if (clickedFileType === 'groundStation') {
+                    dataForButtons = groundStations.get(clickedFileName);
+                } else if (clickedFileType === 'linkBudget') {
+                    dataForButtons = linkBudgetAnalysis.get(clickedFileName);
+                }
+
+                // PENTING: Beralih ke tab Output
+                // Pastikan fungsi toggleTab diekspos secara global (window.toggleTab = toggleTab;)
+                window.toggleTab('output-menu', document.getElementById('outputTabBtn'));
+
+                // PENTING: Pilih item di tab Output agar terhighlight dan pop-up muncul
+                // Kita perlu fungsi helper baru untuk ini
+                selectOutputItem(clickedFileName, clickedFileType);
+
+                // Ini mungkin tidak lagi diperlukan di sini karena selectOutputItem akan menangani tampilannya
+                // if (dataForButtons && window.viewSimulation) {
+                //     window.viewSimulation(dataForButtons);
+                // }
             });
 
             newFileItem.addEventListener('contextmenu', function(event) {
@@ -706,57 +739,174 @@
         populateReportsList();
         }
 
+        window.toDeg = toDeg; // jika belum
+        window.computeAltitude = computeAltitude;
 
+        // Di dalam file simulation.blade.php Anda
         function populateReportsList() {
-        const reportsList = document.getElementById('reports-list');
-        reportsList.innerHTML = ''; // This line is crucial for clearing duplicates
+            const reportsList = document.getElementById('reports-list');
+            reportsList.innerHTML = '';
 
-        // 1) Loop each “file” (single or constellation)…
-        fileOutputs.forEach((data, fileName) => {
-            // create the heading for this file
-            const fileLi = document.createElement('li');
-            fileLi.textContent = "Result";
-            reportsList.appendChild(fileLi);
+            console.log("DEBUG: populateReportsList - Current fileOutputs Map:", window.fileOutputs);
 
-            // 2) now list its satellites
-            const satUl = document.createElement('ul');
-            (data.satellites || []).forEach(satId => {
-                // only show real entries
-                if (!satId) return;
-                const sat = window.activeSatellites.get(satId);
-                const satLi = document.createElement('li');
-                satLi.textContent = sat?.name || satId;    // show the user‐friendly name
-                satLi.dataset.id   = satId;
-                satLi.dataset.type = 'single';
-                satLi.addEventListener('click', () => showSatellitePopup(satId));
-                satUl.appendChild(satLi);
+            // 1) Tambahkan item untuk setiap file Satelit (Single atau Constellation)
+            fileOutputs.forEach((data, fileName) => {
+                console.log(`DEBUG: Processing fileOutputs item: ${fileName}, type: ${data.fileType}`);
+                if (data.fileType === 'single') {
+                    const sat = window.activeSatellites.get(fileName); // Ambil dari activeSatellites
+                    if (sat) {
+                        const li = document.createElement('li');
+                        li.textContent = `Single : ${sat.name}`; // Menggunakan awalan "Single : "
+                        li.dataset.id = sat.id;
+                        li.dataset.type = 'single';
+                        li.addEventListener('click', () => window.selectOutputItem(sat.id, 'single'));
+                        reportsList.appendChild(li);
+                        console.log(`DEBUG: Added single satellite to reports: ${sat.name}`);
+                    } else {
+                        console.warn(`WARN: Single satellite object not found in activeSatellites for: ${fileName}. It might not be rendered in 3D.`);
+                    }
+                } else if (data.fileType === 'constellation') {
+                    const constellationLi = document.createElement('li');
+                    constellationLi.textContent = `Constellation : ${data.fileName}`; // Nama konstelasi dengan awalan
+                    constellationLi.dataset.id = data.fileName;
+                    constellationLi.dataset.type = 'constellation';
+                    reportsList.appendChild(constellationLi);
+                    console.log(`DEBUG: Added constellation to reports: ${data.fileName}`);
+
+                    const satUl = document.createElement('ul');
+                    (data.satellites || []).forEach(satId => {
+                        const sat = window.activeSatellites.get(satId); // Ambil dari activeSatellites
+                        if (sat) {
+                            const satLi = document.createElement('li');
+                            satLi.textContent = `Satellite : ${sat.name}`; // Nama satelit individual dengan awalan
+                            satLi.dataset.id = sat.id;
+                            satLi.dataset.type = 'single';
+                            satLi.addEventListener('click', () => window.selectOutputItem(sat.id, 'single'));
+                            satUl.appendChild(satLi);
+                            console.log(`DEBUG: Added sat in constellation to reports: ${sat.name}`);
+                        } else {
+                            console.warn(`WARN: Satellite object in constellation not found in activeSatellites for: ${satId}`);
+                        }
+                    });
+                    if (satUl.children.length > 0) {
+                        constellationLi.appendChild(satUl);
+                    }
+                }
             });
-            fileLi.appendChild(satUl);
-        });
 
-        // 3) then any ground stations, etc.
-        groundStations.forEach((data, name) => {
-            const li = document.createElement('li');
-            li.textContent = name;
-            li.dataset.id   = name;
-            li.dataset.type = 'groundStation';
-            li.addEventListener('click', () => showGroundStationPopup(name));
-            reportsList.appendChild(li);
-        });
+            // 2) Tambahkan Ground Stations
+            groundStations.forEach((data, name) => {
+                const li = document.createElement('li');
+                li.textContent = `Ground Station : ${name}`;
+                li.dataset.id = name;
+                li.dataset.type = 'groundStation';
+                li.addEventListener('click', () => window.selectOutputItem(name, 'groundStation'));
+                reportsList.appendChild(li);
+                console.log(`DEBUG: Added ground station to reports: ${name}`);
+            });
 
-           // 4) then linkbudget, etc.
-        linkBudgetAnalysis.forEach((data, name) => {
-            const li = document.createElement('li');
-            li.dataset.id = name;
-            li.dataset.type = 'linkBudget';
-            li.textContent = "Resultt"; // Mengubah teks menjadi "result"
-            li.addEventListener('click', () => showLinkBudgetDetails(name)); // Memanggil showLinkBudgetDetails
-            reportsList.appendChild(li);
-        });       
+            // 3) Tambahkan Link Budget Analysis
+            linkBudgetAnalysis.forEach((data, name) => {
+                const li = document.createElement('li');
+                li.dataset.id = name;
+                li.dataset.type = 'linkBudget';
+                li.textContent = `Link Analysis: ${name}`;
+                li.addEventListener('click', () => window.selectOutputItem(name, 'linkBudget'));
+                reportsList.appendChild(li);
+                console.log(`DEBUG: Added link analysis to reports: ${name}`);
+            });
+        }
 
+        // Fungsi selectOutputItem yang DIOPTIMALKAN
+        function selectOutputItem(itemId, itemType) {
+            console.log("selectOutputItem called for:", itemId, itemType); // Debugging
+            
+            // Set global tracking variables
+            window.selectedSatelliteId = itemId;
+            window.selectedSatelliteType = itemType;
 
-        
-    }
+            // Save the updated simulation state
+            saveSimulationState(); // <-- Add this line
+
+            // Hapus highlight dari semua item laporan sebelumnya
+            document.querySelectorAll('#reports-list li').forEach(li => {
+                li.classList.remove('active-item');
+                // Hapus highlight dari sub-list juga jika ada
+                if (li.querySelector('ul')) {
+                    li.querySelectorAll('ul li').forEach(subLi => subLi.classList.remove('active-item'));
+                }
+                window.selectOutputItem = selectOutputItem;
+            });
+
+            // Temukan item yang sesuai di daftar laporan
+            const targetItem = document.querySelector(`#reports-list li[data-id="${itemId}"][data-type="${itemType}"]`);
+
+            if (targetItem) {
+                console.log("Target item found:", targetItem); // Debugging
+                // Tambahkan highlight
+                targetItem.classList.add('active-item');
+
+                // Pastikan pop-up yang sudah ada ditutup sebelum membuka yang baru
+                // Tutup pop-up satelit (custom-popup)
+                if (window.activeSatellitePopup) {
+                    console.log("Closing existing satellite popup..."); // Debugging
+                    window.activeSatellitePopup.element.remove();
+                    window.removeEventListener('epochUpdated', window.activeSatellitePopup.updateHandler);
+                    window.activeSatellitePopup = null;
+                }
+
+                // Tutup pop-up Bootstrap lainnya (Ground Station, Link Budget Output Input, dan Link Budget Details)
+                // Kita tidak ingin menutup pop-up yang akan segera dibuka.
+                const openModals = document.querySelectorAll('.modal.show');
+                openModals.forEach(openModal => {
+                    const bsModal = bootstrap.Modal.getInstance(openModal);
+                    if (bsModal) {
+                        // Hindari menutup modal input Link Budget Analysis saat membuka detailnya
+                        // dan juga hindari menutup modal detail yang akan dibuka
+                        if (openModal.id === 'linkBudgetOutputModal' && itemType !== 'linkBudget') {
+                            bsModal.hide(); // Sembunyikan modal output (sementara, bukan detail)
+                        }
+                        if (openModal.id === 'groundStationPopup' && itemType !== 'groundStation') {
+                            bsModal.hide(); // Sembunyikan modal ground station
+                        }
+                        if (openModal.id === 'satellitePopup' && itemType !== 'single') {
+                            bsModal.hide(); // Sembunyikan modal satelit
+                        }
+                        if (openModal.id === 'linkBudgetAnalysisDetailsPopup' && itemType !== 'linkBudget') {
+                            bsModal.hide(); // Sembunyikan modal detail link budget yang mungkin sudah ada
+                        }
+                    }
+                });
+
+                // Panggil fungsi tampil pop-up yang sesuai
+                if (itemType === 'single') {
+                    console.log("Calling showSatellitePopup for:", itemId); // Debugging
+                    showSatellitePopup(itemId);
+                } else if (itemType === 'groundStation') {
+                    console.log("Calling showGroundStationPopup for:", itemId); // Debugging
+                    showGroundStationPopup(itemId);
+                } else if (itemType === 'linkBudget') {
+                    console.log("Calling showLinkBudgetPopupDetails for:", itemId); // Debugging
+                    // PENTING: Panggil fungsi pop-up detail yang baru
+                    showLinkBudgetPopupDetails(itemId);
+                }
+
+            } else {
+                console.warn(`Item with ID "${itemId}" and type "${itemType}" not found in reports list. No popup opened.`);
+                // Jika tidak ditemukan di laporan, pastikan semua pop-up ditutup
+                if (window.activeSatellitePopup) {
+                    window.activeSatellitePopup.element.remove();
+                    window.removeEventListener('epochUpdated', window.activeSatellitePopup.updateHandler);
+                    window.activeSatellitePopup = null;
+                }
+                const openModals = document.querySelectorAll('.modal.show');
+                openModals.forEach(openModal => {
+                    const bsModal = bootstrap.Modal.getInstance(openModal);
+                    if (bsModal) bsModal.hide();
+                });
+            }
+        }
+        window.selectOutputItem = selectOutputItem; // Penting: Ekspor fungsi ini
 
         // function to convert radians to degrees
         function toRad(deg) { return (deg * Math.PI / 180).toFixed(2); }
@@ -768,122 +918,268 @@
         return ((sat.mesh.position.length() * kmPerUnit) - kmPerUnit).toFixed(2);
         }
 
-// ---------------- showSatellitePopup ----------------
+        // ---------------- showSatellitePopup ----------------
         function showSatellitePopup(satId) {
-        // 1) Close old popup and unsubscribe its updater
-        if (window.activeSatellitePopup) {
-            const { element, updateHandler } = window.activeSatellitePopup;
-            element.remove();
-            window.removeEventListener('epochUpdated', updateHandler);
-            window.activeSatellitePopup = null;
-        }
+            // 1) Ambil data satelit
+            const sat = window.activeSatellites.get(satId);
 
-        // 2) Grab the sat
-        const sat = window.activeSatellites.get(satId);
-        if (!sat) return;
+            // --- DEBUGGING START ---
+            console.log("Calling showSatellitePopup for Sat ID:", satId);
+            console.log("Satellite data (sat):", sat);
+            if (!sat) {
+                console.error("Error: Satellite data not found for ID:", satId);
+                showCustomAlert("Satellite data not found.", "Error");
+                return;
+            }
+            // --- DEBUGGING END ---
 
-        // 3) Build the popup
-        const popup = document.createElement('div');
-        popup.className = 'custom-popup';
-        popup.innerHTML = `
-            <h5>${sat.name}</h5>
-            <p><strong>Altitude:</strong>      <span class="altitude"></span> km</p>
-            <p><strong>Inclination:</strong>   <span class="inclination"></span>°</p>
-            <p><strong>Latitude:</strong>      <span class="latitude"></span>°</p>
-            <p><strong>Longitude:</strong>     <span class="longitude"></span>°</p>
-            <p><strong>RAAN:</strong>          <span class="raan"></span>°</p>
-            <p><strong>Orbital Period:</strong><span class="orbitalPeriod"></span> min</p>
-            <p><strong>Orbital Velocity:</strong><span class="orbitalVelocity"></span> km/s</p>
-            <p><strong>Beamwidth:</strong>     <span class="beamwidth"></span>°</p>
-            <p><strong>True Anomaly:</strong>  <span class="trueAnomaly"></span>°</p>
-            <p><strong>Eccentricity:</strong>   <span class="eccentricity"></span></p>
-            <p><strong>Arg. of Perigee:</strong><span class="argPerigee"></span>°</p>
-            <button class="popup-close">Close</button>
-        `;
-        document.body.appendChild(popup);
-        makeDraggable(popup);
+            const modalId = 'satellitePopup'; // ID unik untuk modal satelit
 
-        // 4) The updater function
-        const updatePopup = () => {
-            // recalc derived params
+            // Hapus modal satelit yang mungkin sudah ada
+            let existingModal = document.getElementById(modalId);
+            if (existingModal) {
+                const bsModalInstance = bootstrap.Modal.getInstance(existingModal);
+                if (bsModalInstance) {
+                    bsModalInstance.hide();
+                }
+                existingModal.remove();
+            }
+
+            const modal = document.createElement('div');
+            modal.className = 'modal fade';
+            modal.id = modalId;
+            modal.style.display = 'block'; // Langsung tampilkan modal
+            modal.style.backgroundColor = 'rgba(0,0,0,0.5)'; // Overlay gelap
+            modal.setAttribute('aria-modal', 'true');
+            modal.setAttribute('role', 'dialog');
+
+            // 2) Hitung parameter turunan (seperti yang sudah Anda lakukan)
             const { orbitalPeriod, orbitalVelocity } = calculateDerivedOrbitalParameters(
-            sat.params.semiMajorAxis - SCENE_EARTH_RADIUS,
-            sat.params.eccentricity
+                sat.params.semiMajorAxis - SCENE_EARTH_RADIUS,
+                sat.params.eccentricity
             );
-            // write into spans
-            popup.querySelector('.altitude').textContent      = computeAltitude(sat);
-            popup.querySelector('.inclination').textContent   = toDeg(sat.params.inclinationRad);
-            popup.querySelector('.latitude').textContent     = sat.latitudeDeg.toFixed(2);
-            popup.querySelector('.longitude').textContent    = sat.longitudeDeg.toFixed(2);
-            popup.querySelector('.raan').textContent         = toDeg(sat.currentRAAN);
-            popup.querySelector('.orbitalPeriod').textContent= (orbitalPeriod/60).toFixed(2);
-            popup.querySelector('.orbitalVelocity').textContent = orbitalVelocity.toFixed(2);
-            popup.querySelector('.beamwidth').textContent    = sat.params.beamwidth;
-            popup.querySelector('.trueAnomaly').textContent  = toDeg(sat.currentTrueAnomaly);
-            popup.querySelector('.eccentricity').textContent = sat.params.eccentricity.toFixed(4);
-            popup.querySelector('.argPerigee').textContent   = toDeg(sat.params.argPerigeeRad);
-        };
 
-        // 5) Hook it up to your simulation’s epochUpdated event
-        window.addEventListener('epochUpdated', updatePopup);
-        // also call it once immediately so all fields are set
-        updatePopup();
+            // 3) Buat konten HTML untuk modal menggunakan struktur Bootstrap
+            modal.innerHTML = `
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">${sat.name || 'Unnamed Satellite'}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p><strong>Altitude:</strong>       <span class="altitude">${computeAltitude(sat)}</span> km</p>
+                            <p><strong>Inclination:</strong>   <span class="inclination">${toDeg(sat.params.inclinationRad)}</span>°</p>
+                            <p><strong>Latitude:</strong>      <span class="latitude">${sat.latitudeDeg.toFixed(4)}</span>°</p>
+                            <p><strong>Longitude:</strong>     <span class="longitude">${sat.longitudeDeg.toFixed(4)}</span>°</p>
+                            <p><strong>RAAN:</strong>          <span class="raan">${toDeg(sat.currentRAAN)}</span>°</p>
+                            <p><strong>Orbital Period:</strong><span class="orbitalPeriod">${(orbitalPeriod/60).toFixed(2)}</span> min</p>
+                            <p><strong>Orbital Velocity:</strong><span class="orbitalVelocity">${orbitalVelocity.toFixed(2)}</span> km/s</p>
+                            <p><strong>Beamwidth:</strong>     <span class="beamwidth">${sat.params.beamwidth}</span>°</p>
+                            <p><strong>True Anomaly:</strong>  <span class="trueAnomaly">${toDeg(sat.currentTrueAnomaly)}</span>°</p>
+                            <p><strong>Eccentricity:</strong>    <span class="eccentricity">${sat.params.eccentricity.toFixed(4)}</span></p>
+                            <p><strong>Arg. of Perigee:</strong><span class="argPerigee">${toDeg(sat.params.argPerigeeRad)}</span>°</p>
+                        </div>
+                        <div class="modal-footer d-flex justify-content-center">
+                            <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            `;
 
-        // 6) Close‐button tears down the handler & popup
-        popup.querySelector('.popup-close').addEventListener('click', () => {
-            popup.remove();
-            window.removeEventListener('epochUpdated', updatePopup);
-            window.activeSatellitePopup = null;
-        });
+            document.body.appendChild(modal);
 
-        // 7) Save state so next time we can unsubscribe it
-        window.activeSatellitePopup = {
-            element:      popup,
-            satId:        satId,
-            updateHandler: updatePopup
-        };
+            // 4) Terapkan fungsi draggable ke modal dialog
+            const modalDialog = modal.querySelector('.modal-dialog');
+            if (modalDialog && typeof makeDraggable === 'function') {
+                makeDraggable(modalDialog);
+            }
+
+            // 5) Inisialisasi objek modal Bootstrap
+            const bsModal = new bootstrap.Modal(modal);
+
+            // 6) Tambahkan event listener untuk menghapus modal dari DOM setelah disembunyikan
+            modal.addEventListener('hidden.bs.modal', function () {
+                modal.remove();
+                // Hapus juga referensi dari window.activeSatellitePopup jika ada
+                if (window.activeSatellitePopup && window.activeSatellitePopup.element === modal) {
+                    window.removeEventListener('epochUpdated', window.activeSatellitePopup.updateHandler);
+                    window.activeSatellitePopup = null;
+                }
+            });
+
+            // 7) Buat fungsi updatePopup dinamis untuk memperbarui nilai di pop-up
+            const updatePopup = () => {
+                // Hanya update jika modal masih ada di DOM
+                if (document.body.contains(modal)) {
+                    const currentSat = window.activeSatellites.get(satId); // Ambil data satelit terbaru
+                    if (currentSat) {
+                        const { orbitalPeriod: newOrbitalPeriod, orbitalVelocity: newOrbitalVelocity } = calculateDerivedOrbitalParameters(
+                            currentSat.params.semiMajorAxis - SCENE_EARTH_RADIUS,
+                            currentSat.params.eccentricity
+                        );
+                        modal.querySelector('.altitude').textContent      = computeAltitude(currentSat);
+                        modal.querySelector('.inclination').textContent   = toDeg(currentSat.params.inclinationRad);
+                        modal.querySelector('.latitude').textContent     = currentSat.latitudeDeg.toFixed(4); // Fixed toFixed(4)
+                        modal.querySelector('.longitude').textContent    = currentSat.longitudeDeg.toFixed(4); // Fixed toFixed(4)
+                        modal.querySelector('.raan').textContent         = toDeg(currentSat.currentRAAN);
+                        modal.querySelector('.orbitalPeriod').textContent= (newOrbitalPeriod/60).toFixed(2);
+                        modal.querySelector('.orbitalVelocity').textContent = newOrbitalVelocity.toFixed(2);
+                        modal.querySelector('.beamwidth').textContent    = currentSat.params.beamwidth;
+                        modal.querySelector('.trueAnomaly').textContent  = toDeg(currentSat.currentTrueAnomaly);
+                        modal.querySelector('.eccentricity').textContent = currentSat.params.eccentricity.toFixed(4);
+                        modal.querySelector('.argPerigee').textContent   = toDeg(currentSat.params.argPerigeeRad);
+                    }
+                }
+            };
+
+            // 8) Simpan referensi ke pop-up dan updateHandler-nya
+            // Pastikan hanya ada satu activeSatellitePopup yang aktif pada satu waktu
+            if (window.activeSatellitePopup) {
+                window.activeSatellitePopup.element.remove(); // Hapus pop-up sebelumnya
+                window.removeEventListener('epochUpdated', window.activeSatellitePopup.updateHandler); // Hapus listener sebelumnya
+            }
+            window.activeSatellitePopup = {
+                element:       modal,
+                satId:         satId,
+                updateHandler: updatePopup
+            };
+
+            // 9) Hook it up to your simulation’s epochUpdated event (hanya satu listener global)
+            window.addEventListener('epochUpdated', updatePopup);
+
+            // 10) Tampilkan modal
+            bsModal.show();
         }
-
 
         // Show Ground Station Popup
         function showGroundStationPopup(gsId) {
             const gs = window.activeGroundStations.get(gsId);
-            if (!gs) return;
 
-            const popup = document.createElement('div');
-            popup.className = 'custom-popup';
-            popup.innerHTML = `
-                <h5>${gs.name}</h5>
-                <p><strong>Latitude:</strong> ${gs.latitude}°</p>
-                <p><strong>Longitude:</strong> ${gs.longitude}°</p>
-                <p><strong>Beamwidth:</strong> ${gs.minElevationAngle}°</p>
-                <button onclick="this.parentElement.remove()">Close</button>
+            // --- DEBUGGING START ---
+            console.log("Calling showGroundStationPopup for GS ID:", gsId);
+            console.log("Ground Station data (gs):", gs);
+
+            if (!gs) {
+                console.error("Error: Ground Station data not found for ID:", gsId);
+                showCustomAlert("Ground Station data not found.", "Error");
+                return;
+            }
+            // --- DEBUGGING END ---
+
+            const modalId = 'groundStationPopup';
+
+            // Hapus modal yang mungkin sudah ada SEBELUM membuat yang baru
+            // Ini adalah langkah penting untuk mencegah penumpukan modal
+            let existingModal = document.getElementById(modalId);
+            if (existingModal) {
+                // Coba dapatkan instance Bootstrap Modal
+                const bsModalInstance = bootstrap.Modal.getInstance(existingModal);
+                // Jika ada instance dan modal masih 'shown' atau 'showing', sembunyikan dulu
+                if (bsModalInstance && existingModal.classList.contains('show')) {
+                    bsModalInstance.hide();
+                }
+                // Hapus elemen modal dari DOM secara langsung
+                existingModal.remove();
+                console.log("Existing groundStationPopup removed from DOM."); // Debugging
+            }
+
+            const modal = document.createElement('div');
+            modal.className = 'modal fade'; // Kelas Bootstrap untuk modal
+            modal.id = modalId; // Pastikan ID ini unik atau di-reset
+            modal.style.display = 'block'; // Tampilkan modal (sebelum Bootstrap show method)
+            modal.style.backgroundColor = 'rgba(0,0,0,0.5)'; // Overlay gelap
+            modal.setAttribute('aria-modal', 'true');
+            modal.setAttribute('role', 'dialog');
+
+
+            modal.innerHTML = `
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Ground Station : ${gs.name || 'Unnamed Ground Station'}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p><strong>Latitude:</strong> ${gs.latitude !== undefined ? gs.latitude.toFixed(4) : 'N/A'}°</p>
+                            <p><strong>Longitude:</strong> ${gs.longitude !== undefined ? gs.longitude.toFixed(4) : 'N/A'}°</p>
+                            <p><strong>Beamwidth:</strong> ${gs.minElevationAngle !== undefined ? gs.minElevationAngle.toFixed(1) : 'N/A'}°</p>
+                        </div>
+                        <div class="modal-footer d-flex justify-content-center">
+                            <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
             `;
-            document.body.appendChild(popup);
-            makeDraggable(popup);
+
+            document.body.appendChild(modal);
+
+            // TEMPAT YANG TEPAT UNTUK makeDraggable()
+            const modalDialog = modal.querySelector('.modal-dialog');
+            if (modalDialog && typeof makeDraggable === 'function') {
+                makeDraggable(modalDialog);
+            }
+
+            // Inisialisasi objek modal Bootstrap
+            const bsModal = new bootstrap.Modal(modal);
+
+            // --- PENTING: Event listener untuk menghapus modal dari DOM setelah disembunyikan ---
+            // Gunakan event 'hidden.bs.modal' yang dipicu oleh Bootstrap setelah transisi penutupan selesai.
+            modal.addEventListener('hidden.bs.modal', function () {
+                // Pastikan modal yang dihapus adalah modal yang sedang aktif atau yang dimaksud
+                if (this.id === modalId) { // Periksa ID untuk memastikan ini modal yang benar
+                    this.remove(); // 'this' merujuk pada elemen modal itu sendiri
+                    console.log("groundStationPopup removed from DOM after hidden."); // Debugging
+                }
+            });
+
+            // Tampilkan modal menggunakan metode Bootstrap
+            bsModal.show();
         }
 
+        // Pastikan fungsi makeDraggable ada dan diekspor jika di file terpisah
+        // Atau tambahkan di sini jika belum ada
         function makeDraggable(element) {
             let isDragging = false;
             let offsetX, offsetY;
 
-            element.addEventListener('mousedown', (e) => {
-                isDragging = true;
-                offsetX = e.clientX - element.getBoundingClientRect().left;
-                offsetY = e.clientY - element.getBoundingClientRect().top;
-            });
+            // Gunakan header modal sebagai area untuk menarik
+            // Jika tidak ada .modal-header, gunakan elemen itu sendiri
+            const dragHandle = element.querySelector('.modal-header') || element;
 
-            document.addEventListener('mousemove', (e) => {
-                if (isDragging) {
-                    element.style.left = `${e.clientX - offsetX}px`;
-                    element.style.top = `${e.clientY - offsetY}px`;
+            dragHandle.addEventListener('mousedown', (e) => {
+                // Jangan drag jika event dimulai dari tombol close
+                if (e.target.closest('.btn-close')) {
+                    return;
                 }
-            });
 
-            document.addEventListener('mouseup', () => {
-                isDragging = false;
-            });
+            isDragging = true;
+            offsetX = e.clientX - element.getBoundingClientRect().left;
+            offsetY = e.clientY - element.getBoundingClientRect().top;
+
+        // Gaya visual saat drag
+        element.style.userSelect = 'none'; // Mencegah pemilihan teks
+        dragHandle.style.cursor = 'grabbing'; // Mengubah kursor
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (isDragging) {
+            // Karena modal-dialog diposisikan dengan transform: translate(-50%, -50%),
+            // kita perlu menghapus transform itu saat mulai drag, dan mengelola posisi dengan top/left.
+            // Saat dilepaskan, Bootstrap akan memposisikan ulang jika perlu.
+            element.style.position = 'fixed';
+            element.style.left = `${e.clientX - offsetX}px`;
+            element.style.top = `${e.clientY - offsetY}px`;
+            element.style.transform = 'none'; // Nonaktifkan transform default Bootstrap saat drag
         }
+    });
+
+    document.addEventListener('mouseup', () => {
+        isDragging = false;
+        element.style.userSelect = ''; // Kembalikan default
+        dragHandle.style.cursor = 'grab'; // Kembalikan kursor
+    });
+}
 
 
         //------------------------------ Link Budget Report Management-----------------------------------
@@ -1621,19 +1917,27 @@
                 } else {
                     recordAction({ type: 'addFile', fileName: fileName, fileData: newData, fileType: 'single' });
                     fileOutputs.set(fileName, newData);
+                    console.log("DEBUG: New single satellite added to fileOutputs:", fileName, newData);
                 }
-
                 saveFilesToLocalStorage();
+
                 // Pass the new data to the JavaScript function for scene update
+                console.log("DEBUG: NewSingleMenu - Data for addOrUpdateSatelliteInScene:", newData);
                 if (window.addOrUpdateSatelliteInScene) {
                     window.addOrUpdateSatelliteInScene(newData); //Pass to Javascript
-                    //window.selectedSatelliteId = newData.fileName; // Set selected satellite (Commented if not needed)
+                    console.log("DEBUG: addOrUpdateSatelliteInScene called for single satellite:", newData.fileName);
                     window.isAnimating = false;
                     setActiveControlButton('pauseButton');
+                } else {
+                    console.error("ERROR: addOrUpdateSatelliteInScene is not defined!");
                 }
 
                 // updateOutputSidebar(newData); //(Removed to avoid double update) - Keep commented as selectSatellite handles it
                 addFileToResourceSidebar(fileName, newData, 'single');
+                populateReportsList();
+                window.isAnimating = false;
+                setActiveControlButton('pauseButton');
+                return true;
                 //updateSatelliteListUI();
                 //selectSatellite(newData.fileName); // Select and highlight the newly created satellite ( To Do :Removed)
                 return true;
@@ -2152,7 +2456,7 @@
         }
 
         function NewLinkBudgetMenu() {
-            const inputBody = `
+            const initialBody = `
                 <div class="mb-3">
                     <label for="lbNameInput" class="form-label">Analysis Name</label>
                     <input type="text" class="form-control" id="lbNameInput">
@@ -2214,14 +2518,23 @@
                     <input type="number" class="form-control" id="minSatellitesInViewInput" min="1">
                 </div>`;
 
-            showModal("Link Budget Analysis", inputBody, () => {
+            showModal("Link Budget Analysis", initialBody, () => {
+                // --- PERHATIKAN ALUR INI ---
                 let hasError = false;
-                const lbName = document.getElementById('lbNameInput').value.trim();
+                const lbNameInput = document.getElementById('lbNameInput'); // <--- Ambil elemen input langsung
+                const lbName = lbNameInput ? lbNameInput.value.trim() : ''; // <--- Ambil nilainya, tambahkan fallback
 
-                if (!lbName) { showInputError('lbNameInput', "Analysis Name cannot be empty."); hasError = true; }
-                else if (linkBudgetAnalysis.has(lbName) && !editingFileName) {
-                    showInputError('lbNameInput', `Analysis Name "${lbName}" already exists. Please use a different name.`); hasError = true;
-                } else { clearInputError('lbNameInput'); }
+                console.log("DEBUG: lbName before validation:", lbName); // Debugging: Periksa nilai ini
+
+                if (!lbName) {
+                    showInputError('lbNameInput', "Analysis Name cannot be empty.");
+                    hasError = true;
+                } else if (!editingFileName && linkBudgetAnalysis.has(lbName)) {
+                    showInputError('lbNameInput', `Analysis Name "${lbName}" already exists. Please use a different name.`);
+                    hasError = true;
+                } else {
+                    clearInputError('lbNameInput');
+                }
 
                 const inputs = [
                     { id: 'transmitPowerInput', name: 'Transmit Power' },
@@ -2251,10 +2564,12 @@
                     else { clearInputError(input.id); values[input.id.replace('Input', '')] = value; }
                 });
 
-                if (hasError) { return false; }
+                if (hasError) {
+                    console.log("DEBUG: Number validation failed, returning false."); // Debugging
+                    return false;
+                }
 
                 const calculatedData = calculateLinkBudget({
-                    name: lbName,
                     transmitPower: values.transmitPower,
                     txAntennaGain: values.txAntennaGain,
                     rxAntennaGain: values.rxAntennaGain,
@@ -2271,23 +2586,28 @@
                     minSatellitesInView: values.minSatellitesInView
                 });
 
-                const fullDataToSave = { ...calculatedData, fileType: 'linkBudget' };
-                showLinkBudgetOutput(fullDataToSave, editingFileName !== null); // Pass isEditing flag
-                return true; // Close the input modal after showing output
+                // PENTING: Gunakan lbName yang sudah kita ambil dan validasi
+                const fullDataToSave = {
+                    ...calculatedData,
+                    name: lbName, // <--- PASTIKAN INI ADALAH lbName DARI INPUT USER
+                    fileType: 'linkBudget'
+                };
+
+                console.log("DEBUG: fullDataToSave before showLinkBudgetOutput:", fullDataToSave); // Debugging// Close the input modal after showing output
+                showLinkBudgetOutput(fullDataToSave, editingFileName !== null);
+                return true;
             }, () => {
                 document.getElementById('lbNameInput').value = '';
                 document.getElementById('transmitPowerInput').value = '';
                 document.getElementById('txAntennaGainInput').value = '';
                 document.getElementById('rxAntennaGainInput').value = '';
                 document.getElementById('frequencyInput').value = '';
-                document.getElementById('distanceInput').value = '';
-                document.getElementById('bandwidthInput').value = '';
+                document.getElementById('distanceInput').value = '';                    document.getElementById('bandwidthInput').value = '';
                 document.getElementById('noiseFigureInput').value = '';
                 document.getElementById('atmosphericLossInput').value = '';
                 document.getElementById('orbitHeightInput').value = '';
                 document.getElementById('elevationAngleInput').value = '';
-                document.getElementById('targetAreaInput').value = '';
-                document.getElementById('minimumSNRInput').value = '';
+                document.getElementById('targetAreaInput').value = '';                    document.getElementById('minimumSNRInput').value = '';
                 document.getElementById('orbitInclinationInput').value = '';
                 document.getElementById('minSatellitesInViewInput').value = '';
                 const inputs = document.querySelectorAll('#fileModalBody input');
@@ -2295,54 +2615,186 @@
             });
         }
 
-       function showLinkBudgetOutput(data, isEditing = false) {
-        const modalElement = document.getElementById('linkBudgetOutputModal');
-        const modalBody = document.getElementById('linkBudgetOutputBody');
-        const modal = new bootstrap.Modal(modalElement);
+        function showLinkBudgetOutput(data, isEditing = false) {
+            const modalElement = document.getElementById('linkBudgetOutputModal');
+            const modalBody = document.getElementById('linkBudgetOutputBody');
 
-        modalBody.innerHTML = `
-            <p><strong>Analysis Name:</strong> ${data.name || 'Unnamed Analysis'}</p> <hr>
-            <h6>Calculated Results:</h6>
-            <p><strong>Received Power:</strong> ${data.receivedPower.toFixed(2)} dBm</p>
-            <p><strong>SNR:</strong> ${data.snr.toFixed(2)} dB</p>
-            <p><strong>Shannon Capacity:</strong> ${data.shannonCapacity.toExponential(4)} bps</p>
-            <h6>Constellation Needs (Walker Constellation by default):</h6>
-            <p><strong>Number of Satellites Needed:</strong> ${Math.ceil(data.numSatellitesNeeded)}</p>
-            <p><strong>Number of Orbital Planes:</strong> ${Math.ceil(data.numOrbitalPlanes)}</p>
-            <p><strong>Revisit Time:</strong> ${data.revisitTime.toFixed(2)} minutes</p>
-            <p><strong>Peak Throughput Per User:</strong> ${data.peakThroughputPerUser.toExponential(4)} bps</p>
-        `;
+            const displayAnalysisName = data.name;
 
-        // Handle the "Apply" button for saving the analysis
-        const applyBtn = document.getElementById('applyLinkBudgetPreviewBtn');
-        applyBtn.onclick = () => {
-            // Perbaiki jika data.name mungkin undefined atau kosong saat menyimpan
-            // Pastikan data.name selalu string yang valid saat diset ke map
-            const nameToSave = data.name || 'Unnamed Analysis'; // Fallback saat menyimpan juga
+            modalBody.innerHTML = `
+                <p><strong>Analysis Name:</strong> ${displayAnalysisName}</p> <hr>
+                <h6>Calculated Results:</h6>
+                <p><strong>Received Power:</strong> ${data.receivedPower.toFixed(2)} dBm</p>
+                <p><strong>SNR:</strong> ${data.snr.toFixed(2)} dB</p>
+                <p><strong>Shannon Capacity:</strong> ${data.shannonCapacity.toExponential(4)} bps</p>
+                <h6>Constellation Needs (Walker Constellation by default):</h6>
+                <p><strong>Number of Satellites Needed:</strong> ${Math.ceil(data.numSatellitesNeeded)}</p>
+                <p><strong>Number of Orbital Planes:</strong> ${Math.ceil(data.numOrbitalPlanes)}</p>
+                <p><strong>Revisit Time:</strong> ${data.revisitTime.toFixed(2)} minutes</p>
+                <p><strong>Peak Throughput Per User:</strong> ${data.peakThroughputPerUser.toExponential(4)} bps</p>
+            `;
 
-            if (isEditing) {
-                const oldData = { ...linkBudgetAnalysis.get(nameToSave) }; // Gunakan nameToSave
-                recordAction({ type: 'editFile', fileName: nameToSave, fileType: 'linkBudget', oldData: oldData, newData: { ...data, name: nameToSave } }); // Pastikan nama di newData juga valid
-                linkBudgetAnalysis.set(nameToSave, { ...data, name: nameToSave }); // Simpan dengan nama yang valid
-            } else {
-                recordAction({ type: 'addFile', fileName: nameToSave, fileData: { ...data, name: nameToSave }, fileType: 'linkBudget' });
-                linkBudgetAnalysis.set(nameToSave, { ...data, name: nameToSave }); // Simpan dengan nama yang valid
+            const applyBtn = document.getElementById('applyLinkBudgetPreviewBtn');
+            applyBtn.setAttribute('data-bs-dismiss', 'modal');
+
+            applyBtn.onclick = () => {
+                let nameToSave = data.name;
+
+                if (!nameToSave || nameToSave.trim() === '') {
+                    nameToSave = "Unnamed Analysis " + new Date().getTime();
+                    console.warn("Link Budget Analysis name was empty, defaulting to a unique 'Unnamed Analysis'.");
+                }
+
+                // --- PENTING: Gunakan langsung objek 'data' yang sudah lengkap ---
+                if (isEditing) {
+                    const oldData = { ...linkBudgetAnalysis.get(nameToSave) }; // Ambil data lama sebelum di-update
+                    recordAction({ type: 'editFile', fileName: nameToSave, fileType: 'linkBudget', oldData: oldData, newData: data }); // newData adalah objek 'data' yang sudah lengkap
+                    linkBudgetAnalysis.set(nameToSave, data); // Simpan objek 'data' yang sudah lengkap
+                } else {
+                    recordAction({ type: 'addFile', fileName: nameToSave, fileData: data, fileType: 'linkBudget' }); // fileData adalah objek 'data' yang sudah lengkap
+                    linkBudgetAnalysis.set(nameToSave, data); // Simpan objek 'data' yang sudah lengkap
+                }
+                saveFilesToLocalStorage();
+                addFileToResourceSidebar(nameToSave, data, 'linkBudget'); // Pastikan data yang lengkap diteruskan
+                populateReportsList();
+                showLinkBudgetDetails(nameToSave); // Ini akan memicu tampilan detail di sidebar
+            };
+
+            const modalInstance = new bootstrap.Modal(modalElement);
+            modalInstance.show();
+        }
+
+        // Tambahkan fungsi ini jika belum ada, atau sesuaikan jika sudah ada
+        function showLinkBudgetDetails(analysisName) {
+            console.log("showLinkBudgetDetails called for:", analysisName); // Debugging
+
+            const analysisData = linkBudgetAnalysis.get(analysisName);
+            if (!analysisData) {
+                console.error("Link Budget Analysis data not found:", analysisName);
+                // Mungkin bersihkan area detail di sidebar
+                document.getElementById('selected-item-details').innerHTML = `<p class="text-danger">Details not found for ${analysisName}.</p>`;
+                return;
             }
-            saveFilesToLocalStorage();
-            addFileToResourceSidebar(nameToSave, { ...data, name: nameToSave }, 'linkBudget'); // Pastikan nama di resource sidebar juga valid
 
-            // --- BARIS INI AKAN MEMASTIKAN DAFTAR REPORTS DIPERBARUI ---
-            populateReportsList();
+            // PENTING: Ini hanya contoh. Anda perlu menyesuaikan ID elemen HTML di sidebar Anda
+            // yang akan menampilkan detail. Asumsi ada div dengan ID 'selected-item-details'
+            const detailsContainer = document.getElementById('selected-item-details'); // Sesuaikan ID ini
+            if (!detailsContainer) {
+                console.warn("Details container element not found in sidebar. Cannot display Link Budget details.");
+                return;
+            }
 
-            // --- BARIS INI AKAN MEMASTIKAN DETAIL LANGSUNG DITAMPILKAN DI SIDEBAR ---
-            // Ini akan memanggil fungsi yang menampilkan detail di #selected-item-details
-            showLinkBudgetDetails(nameToSave); // Panggil fungsi detail untuk menampilkan di sidebar
+            // Pastikan Anda membersihkan konten sebelumnya
+            detailsContainer.innerHTML = '';
 
-            modal.hide(); // Sembunyikan modal setelah menyimpan
-        };
+            // Buat HTML untuk menampilkan detail analisis
+            const detailHTML = `
+                <h6 class="text-dark">Analysis: ${analysisData.name}</h6>
+                <p class="text-dark"><strong>Received Power:</strong> ${analysisData.receivedPower.toFixed(2)} dBm</p>
+                <p class="text-dark"><strong>SNR:</strong> ${analysisData.snr.toFixed(2)} dB</p>
+                <p class="text-dark"><strong>Shannon Capacity:</strong> ${analysisData.shannonCapacity.toExponential(4)} bps</p>
+                <h6 class="text-dark mt-3">Constellation Needs (Walker Constellation by default):</h6>
+                <p class="text-dark"><strong>Number of Satellites Needed:</strong> ${Math.ceil(analysisData.numSatellitesNeeded)}</p>
+                <p class="text-dark"><strong>Number of Orbital Planes:</strong> ${Math.ceil(analysisData.numOrbitalPlanes)}</p>
+                <p class="text-dark"><strong>Revisit Time:</strong> ${analysisData.revisitTime.toFixed(2)} minutes</p>
+                <p class="text-dark"><strong>Peak Throughput Per User:</strong> ${analysisData.peakThroughputPerUser.toExponential(4)} bps</p>
+                <button class="btn btn-sm btn-info mt-2" onclick="editLinkBudget('${analysisData.name}')">Edit</button>
+                <button class="btn btn-sm btn-danger mt-2" onclick="deleteFile('${analysisData.name}', 'linkBudget')">Delete</button>
+            `;
+            detailsContainer.innerHTML = detailHTML;
 
-        modal.show();
-    }
+            // Anda mungkin juga ingin mengatur highlight pada item di daftar reports-list di sini
+            // Ini sudah ditangani oleh selectOutputItem
+        }
+        window.showLinkBudgetDetails = showLinkBudgetDetails; // Jangan lupa ekspos fungsi ini
+
+        // Fungsi untuk menampilkan detail Link Budget Analysis dalam pop-up modal
+        // Parameter `initialData` digunakan saat pertama kali analisis selesai dihitung.
+        function showLinkBudgetPopupDetails(analysisName, initialData = null) {
+            console.log("showLinkBudgetPopupDetails called for:", analysisName, "Initial Data:", initialData); // Debugging
+
+            let analysisData = linkBudgetAnalysis.get(analysisName);
+
+            // Jika initialData disediakan, gunakan itu dan simpan ke Map
+            if (initialData) {
+                analysisData = initialData;
+                // Simpan data ini ke Map dan trigger update UI
+                // Ini adalah logika "Apply" yang sebelumnya ada di showLinkBudgetOutput
+                recordAction({ type: 'addFile', fileName: analysisName, fileData: analysisData, fileType: 'linkBudget' });
+                linkBudgetAnalysis.set(analysisName, analysisData);
+                saveFilesToLocalStorage();
+                addFileToResourceSidebar(analysisName, analysisData, 'linkBudget');
+                populateReportsList(); // Refresh sidebar Output
+            }
+
+            if (!analysisData) {
+                console.error("Error: Link Budget Analysis data not found for ID:", analysisName);
+                showCustomAlert("Link Budget Analysis data not found.", "Error");
+                return;
+            }
+
+            const modalId = 'linkBudgetAnalysisDetailsPopup';
+
+            let existingModal = document.getElementById(modalId);
+            if (existingModal) {
+                const bsModalInstance = bootstrap.Modal.getInstance(existingModal);
+                if (bsModalInstance) {
+                    bsModalInstance.hide();
+                }
+                existingModal.remove();
+            }
+
+            const modal = document.createElement('div');
+            modal.className = 'modal fade';
+            modal.id = modalId;
+            modal.style.display = 'block';
+            modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
+            modal.setAttribute('aria-modal', 'true');
+            modal.setAttribute('role', 'dialog');
+
+            // Di dalam fungsi showLinkBudgetPopupDetails, cari bagian modal.innerHTML:
+            modal.innerHTML = `
+                <div class="modal-dialog modal-dialog-centered modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Link Budget Analysis: ${analysisData.name}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <h6>Calculated Results:</h6>
+                            <p><strong>Received Power:</strong> ${analysisData.receivedPower.toFixed(2)} dBm</p>
+                            <p><strong>SNR:</strong> ${analysisData.snr.toFixed(2)} dB</p>
+                            <p><strong>Shannon Capacity:</strong> ${analysisData.shannonCapacity.toExponential(4)} bps</p>
+                            <hr>
+                            <h6>Constellation Needs (Walker Constellation by default):</h6>
+                            <p><strong>Number of Satellites Needed:</strong> ${Math.ceil(analysisData.numSatellitesNeeded)}</p>
+                            <p><strong>Number of Orbital Planes:</strong> ${Math.ceil(analysisData.numOrbitalPlanes)}</p>
+                            <p><strong>Revisit Time:</strong> ${analysisData.revisitTime.toFixed(2)} minutes</p>
+                            <p><strong>Peak Throughput Per User:</strong> ${analysisData.peakThroughputPerUser.toExponential(4)} bps</p>
+                        </div>
+                        <div class="modal-footer d-flex justify-content-center">
+                            <button type="button" class="btn btn-primary" onclick="editLinkBudget('${analysisData.name}')" data-bs-dismiss="modal">Edit</button> <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+
+            const modalDialog = modal.querySelector('.modal-dialog');
+            if (modalDialog && typeof makeDraggable === 'function') {
+                makeDraggable(modalDialog);
+            }
+
+            const bsModal = new bootstrap.Modal(modal);
+            modal.addEventListener('hidden.bs.modal', function () {
+                modal.remove();
+            });
+
+            bsModal.show();
+        }
+        // Ekspor fungsi ini agar bisa diakses secara global jika diperlukan
+        window.showLinkBudgetPopupDetails = showLinkBudgetPopupDetails;
 
 // --- EDIT MENU FUNCTIONS (triggered by double-click on resource items) ---
     window.editFile = editFile;
@@ -4092,7 +4544,10 @@ function generateAndSaveSelected(popup) {
       // --- DOMContentLoaded: Initial setup and load ---
         document.addEventListener('DOMContentLoaded', function () {
             // Initial load of files and history
-            const filesLoaded = loadFilesFromLocalStorage(); // This will clear storage on first load
+            const filesLoaded = loadFilesFromLocalStorage();
+            populateResourceTab(); // Populates sidebar with loaded files
+            populateReportsList(); // Populates output tab with loaded files
+        // This will clear storage on first load
 
             // Only load history if files were actually loaded (i.e., not first launch)
             if (filesLoaded) {
@@ -4196,6 +4651,111 @@ function generateAndSaveSelected(popup) {
                 setActiveControlButton(window.isAnimating ? 'startButton' : 'pauseButton'); // Set correct button state
             }, 500); // Small delay to allow Earth3Dsimulation.js module to execute
         });
+
+        function loadSimulationState() {
+            try {
+                const savedState = localStorage.getItem(SIMULATION_STATE_KEY);
+                if (savedState) {
+                    const loadedState = JSON.parse(savedState);
+                    console.log("Loading simulation state:", loadedState);
+
+                    // Apply loaded states to global variables
+                    window.isAnimating = loadedState.isAnimating !== undefined ? loadedState.isAnimating : false;
+                    window.currentSpeedMultiplier = loadedState.currentSpeedMultiplier !== undefined ? loadedState.currentSpeedMultiplier : 1;
+                    window.totalSimulatedTime = loadedState.totalSimulatedTime !== undefined ? loadedState.totalSimulatedTime : 0;
+                    window.currentEpochUTC = loadedState.currentEpochUTC !== undefined ? loadedState.currentEpochUTC : new Date().getTime();
+                    window.utcOffset = loadedState.utcOffset !== undefined ? loadedState.utcOffset : 0;
+                    window.is2DViewActive = loadedState.is2DViewActive !== undefined ? loadedState.is2DViewActive : false;
+                    window.closeViewEnabled = loadedState.closeViewEnabled !== undefined ? loadedState.closeViewEnabled : false;
+                    window.selectedSatelliteId = loadedState.selectedSatelliteId || null;
+                    window.selectedSatelliteType = loadedState.selectedSatelliteType || null;
+
+                    // Apply camera state (needs THREE to be loaded)
+                    const core3D = window.getSimulationCoreObjects();
+                    if (core3D && core3D.camera && core3D.controls && loadedState.cameraPosition && loadedState.cameraTarget) {
+                        core3D.camera.position.fromArray(loadedState.cameraPosition);
+                        core3D.controls.target.fromArray(loadedState.cameraTarget);
+                        if (loadedState.cameraRotation) {
+                            core3D.camera.rotation.set(loadedState.cameraRotation._x, loadedState.cameraRotation._y, loadedState.cameraRotation._z, loadedState.cameraRotation.order);
+                        }
+                        core3D.controls.update();
+                    } else {
+                        // Default camera if not loaded or Three.js not ready yet
+                        if (core3D && core3D.camera && core3D.controls) {
+                            core3D.camera.position.set(0, 0, 5); // Default position
+                            core3D.controls.target.set(0, 0, 0);
+                            core3D.controls.update();
+                        }
+                    }
+
+                    // Apply 2D/3D view visuals
+                    toggle2DViewVisuals();
+                    // Update close view button text
+                    document.getElementById('closeViewButton').textContent = window.closeViewEnabled ? 'Normal View' : 'Close View';
+
+                    // Update animation display UI
+                    updateAnimationDisplay();
+                    setActiveControlButton(window.isAnimating ? 'startButton' : 'pauseButton');
+
+                    // Re-render satellites/ground stations based on loaded data.
+                    // This is handled by load3DSimulationState or similar functions in Earth3Dsimulation.js
+                    // But if selectedSatelliteId is present, we should trigger its display.
+                    if (window.selectedSatelliteId && window.selectedSatelliteType) {
+                        // After all objects are loaded and rendered, try to select the item
+                        setTimeout(() => { // Small delay to ensure all 3D objects are added
+                            window.selectOutputItem(window.selectedSatelliteId, window.selectedSatelliteType);
+                            // Also ensure active meshes are set correctly for close view if enabled
+                            window.activeSatellites.forEach(sat => sat.setActiveMesh(window.closeViewEnabled));
+                        }, 100);
+                    }
+
+                    return true; // Indicates state was loaded
+                }
+            } catch (e) {
+                console.error("Error loading simulation state:", e);
+                // Clear corrupted state if error occurs
+                localStorage.removeItem(SIMULATION_STATE_KEY);
+            }
+            return false; // Indicates no state was loaded
+        }
+
+        // In your main script, after THREE is loaded
+        function saveSimulationState() {
+            const core3D = window.getSimulationCoreObjects(); // Assuming this returns {camera, controls, etc.}
+
+            // Update simulationState object
+            simulationState.isAnimating = window.isAnimating;
+            simulationState.currentSpeedMultiplier = window.currentSpeedMultiplier;
+            simulationState.totalSimulatedTime = window.totalSimulatedTime;
+            simulationState.currentEpochUTC = window.currentEpochUTC;
+            simulationState.utcOffset = window.utcOffset;
+            simulationState.is2DViewActive = window.is2DViewActive;
+            simulationState.closeViewEnabled = window.closeViewEnabled;
+            simulationState.selectedSatelliteId = window.selectedSatelliteId;
+            simulationState.selectedSatelliteType = window.selectedSatelliteType;
+
+            if (core3D && core3D.camera && core3D.controls) {
+                simulationState.cameraPosition = core3D.camera.position.toArray(); // Save as array [x,y,z]
+                simulationState.cameraTarget = core3D.controls.target.toArray();
+                simulationState.cameraRotation = {
+                    _x: core3D.camera.rotation._x,
+                    _y: core3D.camera.rotation._y,
+                    _z: core3D.camera.rotation._z,
+                    order: core3D.camera.rotation.order
+                };
+            } else {
+                simulationState.cameraPosition = null;
+                simulationState.cameraTarget = null;
+                simulationState.cameraRotation = null;
+            }
+
+            try {
+                localStorage.setItem(SIMULATION_STATE_KEY, JSON.stringify(simulationState));
+                console.log("Simulation state saved:", simulationState);
+            } catch (e) {
+                console.error("Error saving simulation state:", e);
+            }
+        }
     </script>
 </body>
 </html>
