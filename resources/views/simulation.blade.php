@@ -51,8 +51,7 @@
             font-size: 16px;
         }
 
-        .custom-contextmenu  li,
-        .settings-contextmenu li {
+        .custom-contextmenu  li, .settings-contextmenu li {
             padding: 2px 10px;
             cursor: pointer;
             white-space: nowrap;
@@ -81,8 +80,8 @@
         /* Sidebar Styles */
         .sidebar {
             width: 250px;
-            background: #ffffff; /* Mengubah warna latar belakang sidebar menjadi putih */
-            color: rgb(0, 0, 0); /* Mengubah warna font sidebar menjadi hitam */
+            background: #ffffff;
+            color: rgb(0, 0, 0);
             display: flex;
             flex-direction: column;
         }
@@ -103,7 +102,6 @@
             list-style: none;
             font-weight: normal;
             padding-left: 1rem;
-            /* Tambahkan ini untuk memastikan teks di item list berwarna hitam */
             color: rgb(0, 0, 0);
         }
 
@@ -118,19 +116,14 @@
             cursor: default;
         }
 
-        #single-files-list ul li,
-        #constellation-files-list ul li, #ground-station-resource-list ul li, #link-budget-resource-list ul li {
+        #single-files-list ul li, #constellation-files-list ul li, #ground-station-resource-list ul li, #link-budget-resource-list ul li {
             list-style: none;
             padding-left: 1.5rem;
             cursor: pointer;
-            /* Tambahkan ini untuk memastikan teks di sub-item list berwarna hitam */
             color: rgb(0, 0, 0);
         }
 
-        #single-files-list ul li:hover,
-        #constellation-files-list ul li:hover,
-        #ground-station-resource-list ul li:hover, /* Tambahkan ini */
-        #link-budget-resource-list ul li:hover { /* Tambahkan ini juga untuk Link Budget */
+        #single-files-list ul li:hover, #constellation-files-list ul li:hover, #ground-station-resource-list ul li:hover, #link-budget-resource-list ul li:hover { /* Tambahkan ini juga untuk Link Budget */
             background-color: #e9ecef;
         }
 
@@ -138,20 +131,20 @@
             width: 16px;
             text-align: center;
             margin-right: 6px;
-            color:rgb(59, 132, 228); /* Mengubah warna ikon menjadi abu-abu gelap agar terlihat di latar putih */
+            color:rgb(59, 132, 228); 
         }
 
         #output-menu ul {
             list-style: none;
             padding-left: 0.5rem;
-            color: rgb(0, 0, 0); /* Mengubah warna font pada output-menu ul menjadi hitam */
+            color: rgb(0, 0, 0);
         }
 
         #output-menu ul li {
             list-style: none;
             font-weight: normal;
             cursor: pointer;
-            color: rgb(0, 0, 0); /* Mengubah warna font pada output-menu ul li menjadi hitam */
+            color: rgb(0, 0, 0);
         }
 
         #output-menu ul li:hover {
@@ -180,21 +173,21 @@
             text-align: center;
             font-size: 14px;
             padding: 8px 0;
-            background-color: rgb(33, 92, 151); /* Warna latar belakang tab default */
-            color: white; /* Warna font tab default menjadi putih */
-            border-bottom: 1px solid rgb(33, 92, 151); /* Pastikan border bawah sesuai warna biru */
-            border-radius: 0; /* Menghilangkan border-radius untuk membuat persegi panjang */
+            background-color: rgb(33, 92, 151);
+            color: white; 
+            border-bottom: 1px solid rgb(33, 92, 151);
+            border-radius: 0;
         }
 
         .nav-tabs .nav-link.active {
-            background-color: rgb(33, 92, 151); /* Warna latar belakang tab aktif */
-            color: white; /* Warna font tab aktif tetap putih */
-            border-bottom: 1px solid rgb(33, 92, 151); /* Pastikan border bawah tab aktif juga biru */
-            border-radius: 0; /* Menghilangkan border-radius untuk membuat persegi panjang */
+            background-color: rgb(33, 92, 151); 
+            color: white; 
+            border-bottom: 1px solid rgb(33, 92, 151); 
+            border-radius: 0; 
         }
 
-        #animationStatusDisplay { /* Target kedua set */
-            position: absolute; /* Penting agar muncul di atas kanvas */
+        #animationStatusDisplay {
+            position: absolute; 
             top: 13px;
             right: 13px;
             background-color: rgba(0, 0, 0, 0.6);
@@ -202,7 +195,7 @@
             padding: 8px 15px;
             border-radius: 8px;
             font-size: 14px;
-            z-index: 10; /* Pastikan di atas elemen lain */
+            z-index: 10;
             backdrop-filter: blur(5px);
             display: flex;
             align-items: center;
@@ -210,8 +203,8 @@
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
         }
 
-        #simulationClockDisplay { /* Target kedua set */
-            position: absolute; /* Penting agar muncul di atas kanvas */
+        #simulationClockDisplay {
+            position: absolute; 
             top: 13px;
             left: 13px;
             background-color: rgba(0, 0, 0, 0.6);
@@ -219,7 +212,7 @@
             padding: 8px 15px;
             border-radius: 8px;
             font-size: 14px;
-            z-index: 10; /* Pastikan di atas elemen lain */
+            z-index: 10;
             backdrop-filter: blur(5px);
             display: flex;
             align-items: center;
@@ -227,8 +220,8 @@
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
         }
 
-        #animationStatusDisplay2D { /* Target kedua set */
-            position: absolute; /* Penting agar muncul di atas kanvas */
+        #animationStatusDisplay2D { 
+            position: absolute;
             top: 85px;
             right: 13px;
             background-color: rgba(0, 0, 0, 0.6);
@@ -236,7 +229,7 @@
             padding: 8px 15px;
             border-radius: 8px;
             font-size: 14px;
-            z-index: 10; /* Pastikan di atas elemen lain */
+            z-index: 10;
             backdrop-filter: blur(5px);
             display: flex;
             align-items: center;
@@ -244,8 +237,8 @@
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
         }
 
-        #simulationClockDisplay2D { /* Target kedua set */
-            position: absolute; /* Penting agar muncul di atas kanvas */
+        #simulationClockDisplay2D {
+            position: absolute;
             top: 85px;
             left: 262px;
             background-color: rgba(0, 0, 0, 0.6);
@@ -253,7 +246,7 @@
             padding: 8px 15px;
             border-radius: 8px;
             font-size: 14px;
-            z-index: 10; /* Pastikan di atas elemen lain */
+            z-index: 10;
             backdrop-filter: blur(5px);
             display: flex;
             align-items: center;
@@ -298,8 +291,8 @@
             border-radius: 8px;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
             z-index: 10000;
-            width: 350px; /* UBAH LEBAR DI SINI, misalnya 350px */
-            padding: 0; /* Hapus padding di sini, karena sudah ada di header/body/footer */
+            width: 350px;
+            padding: 0;
             cursor: move;
             border: none;
         }
@@ -348,11 +341,11 @@
         .custom-alert-footer {
             border-top: 1px solid #ddd;
             padding: 10px 20px;
-            display: flex; /* Tambahkan ini */
+            display: flex;
             justify-content: center;
         }
 
-                /* Styling untuk Header Pop-up Kustom */
+        /* Styling untuk Header Pop-up Kustom */
         .custom-popup-header {
             display: flex;
             justify-content: space-between;
@@ -362,9 +355,9 @@
         }
 
         .custom-popup-header .modal-title {
-            color: #333; /* Font gelap */
+            color: #333;
             font-weight: bold;
-            margin-bottom: 0; /* Hapus margin default h5 */
+            margin-bottom: 0;
         }
 
         /* Tombol Close 'X' di Header */
@@ -1396,6 +1389,7 @@
         window.clearInputError = clearInputError; // Added as it's used within your script
 
         function showCustomConfirmation(message, title = 'Konfirmasi', confirmButtonText = 'OK', onConfirmCallback, showCancelButton = false) {
+            closeAllCustomPopups();
             document.getElementById('customAlertModalLabel').textContent = title;
             document.querySelector('#customAlertModal .modal-body').innerHTML = `<p>${message}</p>`;
 
@@ -1464,6 +1458,7 @@
         }
 
         function showModal(title, bodyHTML, onSave, onReset = null, fileNameToEdit = null, fileTypeToEdit = null) {
+            closeAllCustomPopups();
         document.getElementById('fileModalLabel').textContent = title;
         document.getElementById('fileModalBody').innerHTML = bodyHTML;
         const modalElement = document.getElementById('fileModal');
@@ -2448,6 +2443,7 @@
         }
 
         function showLinkBudgetOutput(data, isEditing = false) {
+            closeAllCustomPopups();
             const modalElement = document.getElementById('linkBudgetOutputModal');
             const modalBody = document.getElementById('linkBudgetOutputBody');
             const modal = new bootstrap.Modal(modalElement);
@@ -3477,44 +3473,45 @@ if (typeof window.setActiveControlButton === 'undefined') {
 
         // ----------------------------------------- END VIEW MENU FUNCTIONS ---------------------------------------------
 
-// ------------------------------------- SAVE MENU FUNCTIONS ------------------------------------------------
-window.showSavePopup            = showSavePopup;
-window.generateAndSaveSelected = generateAndSaveSelected;
+        // ------------------------------------- SAVE MENU FUNCTIONS ------------------------------------------------
+        window.showSavePopup            = showSavePopup;
+        window.generateAndSaveSelected = generateAndSaveSelected;
 
-// Show the “Save” dialog
-function showSavePopup() {
-  // remove any existing popup
-  document.querySelectorAll('.custom-popup').forEach(el=>el.remove());
+        // Show the “Save” dialog
+        function showSavePopup() {
+            closeAllCustomPopups();
+            // remove any existing popup
+            document.querySelectorAll('.custom-popup').forEach(el=>el.remove());
 
-  // gather list of selectable satellites
-  const sats = [];
-  window.activeSatellites.forEach((sat, id) => {
-    sats.push({ id, name: sat.name, startEpoch: sat.initialEpochUTC });
-  });
-  if (!sats.length) {
-    // Memanggil showCustomAlert untuk menampilkan pesan yang konsisten
-    showCustomAlert("No active satellites to save", "Caution!");
-    return; // Penting untuk keluar dari fungsi setelah menampilkan alert
-  }
+            // gather list of selectable satellites
+            const sats = [];
+            window.activeSatellites.forEach((sat, id) => {
+                sats.push({ id, name: sat.name, startEpoch: sat.initialEpochUTC });
+            });
+            if (!sats.length) {
+                // Memanggil showCustomAlert untuk menampilkan pesan yang konsisten
+                showCustomAlert("No active satellites to save", "Caution!");
+                return; // Penting untuk keluar dari fungsi setelah menampilkan alert
+            }
 
-  // build popup container
-  const popup = document.createElement('div');
-  popup.className = 'custom-popup';
-  Object.assign(popup.style, {
-    position: 'absolute', left: '50%', top: '50%',
-    transform: 'translate(-50%,-50%)',
-    background: '#fff', color:'#000',
-    padding: '20px', border: '1px solid #ccc', zIndex:10000,
-    width: '360px',
-  });
+            // build popup container
+            const popup = document.createElement('div');
+            popup.className = 'custom-popup';
+            Object.assign(popup.style, {
+                position: 'absolute', left: '50%', top: '50%',
+                transform: 'translate(-50%,-50%)',
+                background: '#fff', color:'#000',
+                padding: '20px', border: '1px solid #ccc', zIndex:10000,
+                width: '360px',
+            });
 
-  // helper: ms → datetime-local string
-  const fmtLocal = ms => {
-    const dt = new Date(ms);
-    const pad = n=> String(n).padStart(2,'0');
-    return `${dt.getFullYear()}-${pad(dt.getMonth()+1)}-${pad(dt.getDate())}` +
-           `T${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
-  };
+            // helper: ms → datetime-local string
+            const fmtLocal = ms => {
+                const dt = new Date(ms);
+                const pad = n=> String(n).padStart(2,'0');
+                return `${dt.getFullYear()}-${pad(dt.getMonth()+1)}-${pad(dt.getDate())}` +
+                    `T${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
+            };
 
   // build HTML
   popup.innerHTML = `
@@ -3886,27 +3883,117 @@ function generateAndSaveSelected(popup) {
         // --- Three.js related functions (now directly call exposed functions from Earth3Dsimulation.js) ---
         window.zoomIn = zoomIn;
         window.zoomOut = zoomOut;
-        // Zoom in and out functions for camera control
+
+        // Zoom in function for camera control
         function zoomIn() {
             const core3D = window.getSimulationCoreObjects();
             if (!core3D.camera || !core3D.controls) { console.warn("Three.js not initialized for zoom."); return; }
-            const prevState = { position: core3D.camera.position.clone(), rotation: core3D.camera.rotation.clone(), target: core3D.controls.target.clone() };
-            core3D.camera.position.z -= 1;
-            core3D.controls.update();
-            const newState = { position: core3D.camera.position.clone(), rotation: core3D.camera.rotation.clone(), target: core3D.controls.target.clone() };
+
+            const prevState = {
+                position: core3D.camera.position.clone(),
+                rotation: core3D.camera.rotation.clone(),
+                target: core3D.controls.target.clone()
+            };
+
+            // Tentukan posisi target zoom in yang baru
+            // Kita akan mendekatkan kamera ke target kontrolnya (biasanya pusat Bumi atau satelit)
+            // Cara paling sederhana adalah mendekatkan kamera ke target kontrolnya
+            const newTargetPosition = core3D.controls.target.clone(); // Ambil target saat ini
+            const newCameraPosition = core3D.camera.position.clone();
+            newCameraPosition.sub(newTargetPosition); // Vektor dari target ke kamera
+            newCameraPosition.multiplyScalar(0.8); // Perkecil jarak sebesar 20% (zoom in)
+            newCameraPosition.add(newTargetPosition); // Tambahkan kembali ke target
+
+            // Rekam state baru (sebelum animasi selesai, ini akan menjadi target akhir animasi)
+            const newState = {
+                position: newCameraPosition.clone(),
+                rotation: core3D.camera.rotation.clone(), // Rotasi kamera mungkin tidak berubah banyak
+                target: newTargetPosition.clone()
+            };
+
+            // Nonaktifkan sementara OrbitControls agar GSAP bisa mengontrol kamera dengan mulus
+            core3D.controls.enabled = false;
+
+            gsap.to(core3D.camera.position, {
+                duration: 0.5, // Durasi animasi dalam detik
+                x: newCameraPosition.x,
+                y: newCameraPosition.y,
+                z: newCameraPosition.z,
+                ease: "power2.out", // Jenis easing untuk efek smooth
+                onUpdate: () => core3D.controls.update(), // Perbarui kontrol saat animasi berjalan
+                onComplete: () => {
+                    core3D.controls.enabled = true; // Aktifkan kembali kontrol setelah animasi selesai
+                    core3D.controls.update();
+                }
+            });
+
+            // Animasikan juga target kontrol jika kamera bergerak relatif terhadap target
+            // Jika targetnya selalu (0,0,0) maka ini tidak perlu, tapi jika mengikuti satelit akan penting
+            gsap.to(core3D.controls.target, {
+                duration: 0.5,
+                x: newTargetPosition.x,
+                y: newTargetPosition.y,
+                z: newTargetPosition.z,
+                ease: "power2.out",
+                onUpdate: () => core3D.controls.update()
+            });
+
             recordAction({ type: 'camera', prevState: prevState, newState: newState });
         }
+
         // Zoom out function
         function zoomOut() {
             const core3D = window.getSimulationCoreObjects();
             if (!core3D.camera || !core3D.controls) { console.warn("Three.js not initialized for zoom."); return; }
-            const prevState = { position: core3D.camera.position.clone(), rotation: core3D.camera.rotation.clone(), target: core3D.controls.target.clone() };
-            core3D.camera.position.z += 1;
-            core3D.controls.update();
-            const newState = { position: core3D.camera.position.clone(), rotation: core3D.camera.rotation.clone(), target: core3D.controls.target.clone() };
+
+            const prevState = {
+                position: core3D.camera.position.clone(),
+                rotation: core3D.camera.rotation.clone(),
+                target: core3D.controls.target.clone()
+            };
+
+            // Tentukan posisi target zoom out yang baru
+            const newTargetPosition = core3D.controls.target.clone(); // Ambil target saat ini
+            const newCameraPosition = core3D.camera.position.clone();
+            newCameraPosition.sub(newTargetPosition); // Vektor dari target ke kamera
+            newCameraPosition.multiplyScalar(1.25); // Perbesar jarak sebesar 25% (zoom out)
+            newCameraPosition.add(newTargetPosition); // Tambahkan kembali ke target
+
+            // Rekam state baru
+            const newState = {
+                position: newCameraPosition.clone(),
+                rotation: core3D.camera.rotation.clone(),
+                target: newTargetPosition.clone()
+            };
+
+            // Nonaktifkan sementara OrbitControls
+            core3D.controls.enabled = false;
+
+            gsap.to(core3D.camera.position, {
+                duration: 0.5, // Durasi animasi
+                x: newCameraPosition.x,
+                y: newCameraPosition.y,
+                z: newCameraPosition.z,
+                ease: "power2.out",
+                onUpdate: () => core3D.controls.update(),
+                onComplete: () => {
+                    core3D.controls.enabled = true; // Aktifkan kembali kontrol
+                    core3D.controls.update();
+                }
+            });
+
+            // Animasikan juga target kontrol jika perlu
+            gsap.to(core3D.controls.target, {
+                duration: 0.5,
+                x: newTargetPosition.x,
+                y: newTargetPosition.y,
+                z: newTargetPosition.z,
+                ease: "power2.out",
+                onUpdate: () => core3D.controls.update()
+            });
+
             recordAction({ type: 'camera', prevState: prevState, newState: newState });
         }
-
         // --- HISTORY MANAGEMENT FUNCTIONS ---
         function saveHistoryToLocalStorage() {
             try {
@@ -4151,9 +4238,12 @@ function generateAndSaveSelected(popup) {
                     default:
                         console.warn("Unknown action type for undo:", action.type);
                 }
-                //updateSatelliteListUI(); // Ensure UI lists are up to date after undo/redo
-                // Attempt to re-select the original selected item if it still exists
-                const currentSelectedData = fileOutputs.get(window.selectedSatelliteId) || groundStations.get(window.selectedSatelliteId) || linkBudgetAnalysis.get(window.selectedSatelliteId);
+                populateResourceTab();
+                populateReportsList();
+                // --- TEMPATKAN KODE INI DI SINI setelah populateReportsList(); ---
+                const outputTabBtn = document.getElementById('outputTabBtn');
+                const resourceTabBtn = document.getElementById('resourceTabBtn'); // Ini sebenarnya tidak digunakan dalam baris selanjutnya, tapi tidak masalah jika ada.
+                // --- END OF PLACEMENT ---
             } else {
                 showCustomAlert("No actions to undo");
             }
@@ -4196,9 +4286,12 @@ function generateAndSaveSelected(popup) {
                     default:
                         console.warn("Unknown action type for redo:", action.type);
                 }
-                //updateSatelliteListUI(); // Ensure UI lists are up to date after undo/redo
-                const currentSelectedData = fileOutputs.get(window.selectedSatelliteId) || groundStations.get(window.selectedSatelliteId) || linkBudgetAnalysis.get(window.selectedSatelliteId);
-            
+                populateResourceTab();
+                populateReportsList();
+                // --- TEMPATKAN KODE INI DI SINI setelah populateReportsList(); ---
+                const outputTabBtn = document.getElementById('outputTabBtn');
+                const resourceTabBtn = document.getElementById('resourceTabBtn'); // Ini sebenarnya tidak digunakan dalam baris selanjutnya, tapi tidak masalah jika ada.
+                // --- END OF PLACEMENT ---
             } else {
                 showCustomAlert("No actions to redo");
             }
@@ -4206,40 +4299,33 @@ function generateAndSaveSelected(popup) {
 
 // --- LOGOUT FUNCTION ---
         window.handleLogout = handleLogout; // Expose this one too
-        function handleLogout() {
-            console.log("handleLogout function called.");
-            // Clear all local storage related to the simulation
-            localStorage.removeItem(LOCAL_STORAGE_FILES_KEY);
-            localStorage.removeItem(LOCAL_STORAGE_GROUND_STATIONS_KEY);
-            localStorage.removeItem(LOCAL_STORAGE_LINK_BUDGETS_KEY);
-            localStorage.removeItem(LOCAL_STORAGE_HISTORY_KEY);
-            localStorage.removeItem(LOCAL_STORAGE_HISTORY_INDEX_KEY);
-            localStorage.removeItem(SIMULATION_STATE_KEY); // Clear the main simulation state
-            localStorage.removeItem(FIRST_LOAD_FLAG_KEY); // Clear the first load flag
-
-            // Clear in-memory data
-            fileOutputs.clear();
-            groundStations.clear();
-            linkBudgetAnalysis.clear();
-            appHistory = [];
-            appHistoryIndex = -1;
-
-            // Clear 3D scene objects
-            if (window.clearSimulationScene) {
-                window.clearSimulationScene();
-            }
-
-            // Clear UI elements
-            document.querySelector('#single-files-list ul').innerHTML = '';
-            document.querySelector('#constellation-files-list ul').innerHTML = '';
-            document.querySelector('#ground-station-resource-list ul').innerHTML = '';
-            document.querySelector('#link-budget-resource-list ul').innerHTML = '';
-            document.querySelector('#output-menu ul').innerHTML = '';
-            updateSatelliteListUI(); // Reset satellite list display
-
-            console.log("Redirecting to homepage...");
-            window.location.href = "/"; // Redirect to your home page or login page
-        }
+function handleLogout() {
+    console.log("handleLogout function called.");
+    console.log("Attempting to redirect to:", window.location.origin + "/");
+    window.location.href = "/"; // Target homepage
+    // comment out or remove all these lines for testing:
+    // localStorage.removeItem(LOCAL_STORAGE_FILES_KEY);
+    // localStorage.removeItem(LOCAL_STORAGE_GROUND_STATIONS_KEY);
+    // localStorage.removeItem(LOCAL_STORAGE_LINK_BUDGETS_KEY);
+    // localStorage.removeItem(LOCAL_STORAGE_HISTORY_KEY);
+    // localStorage.removeItem(LOCAL_STORAGE_HISTORY_INDEX_KEY);
+    // localStorage.removeItem(SIMULATION_STATE_KEY);
+    // localStorage.removeItem(FIRST_LOAD_FLAG_KEY);
+    // fileOutputs.clear();
+    // groundStations.clear();
+    // linkBudgetAnalysis.clear();
+    // appHistory = [];
+    // appHistoryIndex = -1;
+    // if (window.clearSimulationScene) {
+    //     window.clearSimulationScene();
+    // }
+    // document.querySelector('#single-files-list ul').innerHTML = '';
+    // document.querySelector('#constellation-files-list ul').innerHTML = '';
+    // document.querySelector('#ground-station-resource-list ul').innerHTML = '';
+    // document.querySelector('#link-budget-resource-list ul').innerHTML = '';
+    // document.querySelector('#output-menu ul').innerHTML = '';
+    // updateSatelliteListUI();
+}
       
         window.is2DViewActive = false; // Default: 3D view aktif
         // --- DOMContentLoaded: Initial setup and load ---
@@ -4334,6 +4420,60 @@ function generateAndSaveSelected(popup) {
             toggle2DViewVisuals();
         }, 500);
     });
+
+    // Tambahkan fungsi ini di dalam <script type="module"> Anda,
+    // di scope global atau di dekat fungsi-fungsi pembantu lainnya.
+    function closeAllCustomPopups() {
+        // Menutup popup satelit/ground station yang sedang aktif
+        if (window.activeSatellitePopup) {
+            const { element, updateHandler } = window.activeSatellitePopup;
+            element.remove();
+            window.removeEventListener('epochUpdated', updateHandler); // Hapus listener
+            window.activeSatellitePopup = null;
+        }
+
+        // Menutup popup lain yang mungkin menggunakan class 'custom-popup'
+        // yang tidak dikelola oleh activeSatellitePopup
+        document.querySelectorAll('.custom-popup').forEach(popup => {
+            // Hanya hapus jika popup tersebut bukan bagian dari Bootstrap modal
+            // Bootstrap modal memiliki class 'modal-dialog' pada elemen parent dari '.custom-popup'
+            // atau kita bisa membedakan berdasarkan ID yang diketahui (misal, untuk save popup)
+            if (!popup.closest('.modal-dialog')) {
+                popup.remove();
+            }
+        });
+    }
+
+    // Tambahkan di mana saja di scope <script type="module"> Anda
+// Fungsi ini akan membersihkan detail yang mungkin ditampilkan di tab Output
+function updateOutputSidebar(data = null) {
+    // Implementasi sederhana: membersihkan area detail atau menampilkan info default
+    const reportsList = document.getElementById('reports-list');
+    const linkReportsList = document.getElementById('link-reports-list'); // Jika Anda punya area terpisah untuk link reports
+
+    // Clear the existing reports and links output to rebuild it
+    reportsList.innerHTML = '';
+    linkReportsList.innerHTML = ''; // Pastikan ini juga dibersihkan jika diperlukan
+
+    // Membangun ulang daftar laporan utama
+    populateReportsList();
+
+    // Jika ada data yang spesifik untuk ditampilkan, Anda bisa melakukannya di sini
+    // Namun, untuk tujuan undo/redo, kita hanya perlu merefresh daftar item.
+    // Jika ada panel detail aktif, Anda mungkin ingin menyembunyikannya atau membersihkannya.
+    // Contoh: jika Anda punya div untuk menampilkan detail satelit yang sedang dipilih
+    // const detailPanel = document.getElementById('someDetailPanel');
+    // if (detailPanel) {
+    //     detailPanel.innerHTML = ''; // Bersihkan panel detail
+    // }
+}
+
+// Fungsi ini digunakan untuk memastikan daftar satelit/resource di-update
+// Sebenarnya populateResourceTab() sudah melakukan ini, tapi kita biarkan namanya sesuai
+// dengan niat asli Anda. Kita bisa membuat ini memanggil populateResourceTab()
+function updateSatelliteListUI() {
+    populateResourceTab(); // Memanggil fungsi yang sudah ada untuk me-render ulang daftar resource
+}
     </script>
 </body>
 </html>
