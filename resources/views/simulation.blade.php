@@ -1770,6 +1770,10 @@
 
                 // updateOutputSidebar(newData); //(Removed to avoid double update) - Keep commented as selectSatellite handles it
                 addFileToResourceSidebar(fileName, newData, 'single');
+                // New lines added for UX improvement
+                toggleTab('output-menu', document.getElementById('outputTabBtn'));
+                showSatellitePopup(fileName);
+                return true;
                 //updateSatelliteListUI();
                 //selectSatellite(newData.fileName); // Select and highlight the newly created satellite ( To Do :Removed)
                 return true;
@@ -2136,6 +2140,9 @@
                 // updateOutputSidebar(newData); //(Removed to avoid duplicate updates) - Keep commented as selectOutputItem handles it
                 addFileToResourceSidebar(fileName, newData, 'constellation');
                 populateReportsList();
+                // New line added for UX improvement
+                toggleTab('output-menu', document.getElementById('outputTabBtn'));
+                return true;
                 //updateSatelliteListUI();
                 return true;
             }, () => {
@@ -2278,6 +2285,10 @@
                 }
                 // updateOutputSidebar(newData); // Keep commented as selectGroundStation handles it
                 addFileToResourceSidebar(gsName, newData, 'groundStation');
+                // New lines added for UX improvement
+                toggleTab('output-menu', document.getElementById('outputTabBtn'));
+                showGroundStationPopup(gsName);
+                return true;
                 //updateSatelliteListUI();
                 //selectGroundStation(newData.id); // Select and highlight the newly created ground station
                 return true;
@@ -2477,6 +2488,9 @@
                 }
                 saveFilesToLocalStorage();
                 addFileToResourceSidebar(data.name, data, 'linkBudget');
+                // New line added for UX improvement
+                toggleTab('output-menu', document.getElementById('outputTabBtn'));
+                modal.hide();
                // updateSatelliteListUI();
                 //selectOutputItem(data.name, 'linkBudget'); // Select and highlight the newly saved/edited LB
                 modal.hide(); // Hide the output modal after saving
@@ -2653,7 +2667,11 @@
             }
 
             //updateOutputSidebar(updatedData);
-            addFileToResourceSidebar(currentFileName, updatedData, 'single');
+             addFileToResourceSidebar(currentFileName, updatedData, 'single');
+            // New lines added for UX improvement
+            toggleTab('output-menu', document.getElementById('outputTabBtn'));
+            showSatellitePopup(currentFileName);
+            return true;
             //updateSatelliteListUI();
             //selectSatellite(currentFileName);
             return true;
