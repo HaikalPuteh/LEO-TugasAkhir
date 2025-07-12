@@ -1,123 +1,174 @@
-// sunCalculations.js
+// sunCalculations.js - Completely corrected implementation
 
-/**
- * Helper function to convert degrees to radians.
- * @param {number} degrees - Angle in degrees.
- * @returns {number} Angle in radians.
- */
 export function degToRad(degrees) {
     return degrees * (Math.PI / 180);
 }
 
-/**
- * Converts radians to degrees.
- * @param {number} radians - Angle in radians.
- * @returns {number} Angle in degrees.
- */
 export function radToDeg(radians) {
     return radians * (180 / Math.PI);
 }
 
-/**
- * Converts a JavaScript Date object (UTC) to Julian Day.
- * Julian Day 2451545.0 is J2000 epoch (January 1, 2000, 12:00 TT).
- * @param {Date} date - UTC Date object.
- * @returns {number} Julian Day.
- */
 function toJulian(date) {
-    // ValueOf returns milliseconds since Jan 1, 1970 UTC
-    // 86400000 milliseconds in a day
-    // 2440587.5 is Julian Day for Jan 1, 1970 00:00 UTC
-    return date.valueOf() / 86400000 - 0.5 + 2440587.5;
+    return (date.valueOf() / 86400000)+ 2440587.5;
 }
 
-/**
- * Calculates Greenwich Mean Sidereal Time (GMST) in radians.
- * This is used to relate celestial coordinates to Earth-fixed longitudes.
- *
- * @param {Date} date - UTC Date object.
- * @returns {number} GMST in radians.
- */
 export function getGMST(date) {
-    const d = toJulian(date) - 2451545.0; // Days since J2000 epoch
-    // GMST in hours
-    const gmst = (18.697374558 + 24.06570982441908 * d) % 24; 
-    // Convert to degrees, then radians (lw is 0 for Greenwich)
-    return degToRad((gmst * 15) % 360); 
+    const jd = toJulian(date);
+    const t = (jd - 2451545.0) / 36525.0;
+    
+    // More accurate GMST calculation (IAU 2000)
+    let gmst = 280.46061837 + 360.98564736629 * (jd - 2451545.0) + 
+               0.000387933 * t * t - (t * t * t) / 38710000.0;
+    
+    // Normalize to [0, 360) degrees
+    gmst = gmst % 360;
+    if (gmst < 0) gmst += 360;
+    
+    return degToRad(gmst);
 }
 
-//-------------------------------------------------3D-----------------------------------------------------
 /**
- * Calculates the sun’s coordinates (Right Ascension and Declination) in radians
- * using formulas that incorporate the "equation of center" for higher accuracy,
- * based on methods found in astronomical references like Wikipedia's "Position of the Sun".
- *
- * @param {Date} date - UTC Date object representing the current time.
- * @returns {{ra: number, dec: number}} Object with Right Ascension (ra) and Declination (dec) in radians (J2000 ECI).
+ * CORRECTED: Sun position calculation - The issue was in the epoch calculation
+ * Based on Meeus "Astronomical Algorithms" Chapter 25, with proper J2000 epoch handling
  */
 export function getSunCoords(date) {
-    const d = toJulian(date) - 2451545.0; // Days since J2000 epoch
-
-    // Mean anomaly of the Sun (M) - in degrees
-    const M_deg = (357.5291 + 0.98560028 * d) % 360;
-    const M_rad = degToRad(M_deg); // Mean Anomaly in radians
-
-    // Mean longitude of the Sun (L0) - in degrees
-    // This L0 includes initial offset and daily motion.
-    const L0_deg = (280.460 + 0.98564736 * d) % 360;
+    const jd = toJulian(date);
     
-    // Ecliptic longitude (lambda) - in degrees, including equation of center
-    // This term accounts for the elliptical nature of Earth's orbit.
-    const lambda_deg = L0_deg + 1.915 * Math.sin(M_rad) + 0.020 * Math.sin(2 * M_rad);
-    const lambda_rad = degToRad(lambda_deg); // True Ecliptic Longitude in radians
-
-    // Obliquity of the ecliptic (epsilon) - Earth's axial tilt in degrees
-    const epsilon_deg = 23.439 - 0.00000036 * d;
-    const epsilon_rad = degToRad(epsilon_deg);
-
-    // Right Ascension (RA) - in radians
-    // Conversion from ecliptic coordinates (lambda, epsilon) to equatorial coordinates (RA, Dec)
-    const ra = Math.atan2(Math.cos(epsilon_rad) * Math.sin(lambda_rad), Math.cos(lambda_rad));
+    // CRITICAL FIX: Use proper number of days since J2000.0 epoch
+    // J2000.0 = January 1, 2000, 12:00 TT = JD 2451545.0
+    const n = jd - 2451545.0;
+    const t = n / 36525.0; // Julian centuries since J2000.0
     
-    // Declination (Dec) - in radians
-    const dec = Math.asin(Math.sin(epsilon_rad) * Math.sin(lambda_rad));
-
-    // Normalize RA to be between 0 and 2*PI radians
+    // FIXED: Mean longitude of the Sun (L0) - corrected coefficients
+    let L0 = 280.46646 + n * 0.9856474 + t * t * 0.0000453;
+    L0 = L0 % 360;
+    if (L0 < 0) L0 += 360;
+    
+    // FIXED: Mean anomaly of the Sun (M) - corrected coefficients  
+    let M = 357.52911 + n * 0.98560028 - t * t * 0.0001537;
+    M = M % 360;
+    if (M < 0) M += 360;
+    const M_rad = degToRad(M);
+    
+    // Equation of center (C) - this looks correct
+    const C = Math.sin(M_rad) * (1.914602 - t * (0.004817 + 0.000014 * t)) +
+              Math.sin(2 * M_rad) * (0.019993 - 0.000101 * t) +
+              Math.sin(3 * M_rad) * 0.000289;
+    
+    // True longitude of the Sun
+    const L = L0 + C;
+    
+    // FIXED: Nutation correction - simplified but more accurate
+    const omega = 125.04 - 1934.136 * t;
+    const lambda = L - 0.00569 - 0.00478 * Math.sin(degToRad(omega));
+    
+    // FIXED: Obliquity calculation - use standard formula
+    const epsilon0 = 23.4392911 - 0.0130042 * t - 0.00000164 * t * t + 0.000000504 * t * t * t;
+    const epsilon = epsilon0 + 0.00256 * Math.cos(degToRad(omega));
+    
+    // Convert to radians for final calculations
+    const lambda_rad = degToRad(lambda);
+    const epsilon_rad = degToRad(epsilon);
+    
+    // Convert ecliptic to equatorial coordinates
+    const sinLambda = Math.sin(lambda_rad);
+    const cosLambda = Math.cos(lambda_rad);
+    const sinEpsilon = Math.sin(epsilon_rad);
+    const cosEpsilon = Math.cos(epsilon_rad);
+    
+    // Right ascension - ensure correct quadrant
+    let alpha = Math.atan2(cosEpsilon * sinLambda, cosLambda);
+    if (alpha < 0) alpha += 2 * Math.PI;
+    
+    // Declination
+    const delta = Math.asin(sinEpsilon * sinLambda);
+    
     return {
-        ra: (ra + 2 * Math.PI) % (2 * Math.PI),
-        dec: dec
+        ra: alpha,
+        dec: delta,
+        // Debug info
+        // n: n,
+        // L0: L0,
+        // M: M,
+        // C: C,
+        // L: L,
+        // lambda: lambda,
+        // epsilon: epsilon
     };
 }
-
 
 /**
- * Calculates the subsolar point (latitude and longitude) for a given UTC Date object.
- * The subsolar point is where the sun's rays are directly overhead.
- *
- * @param {Date} utcDate - The Date object representing the UTC time.
- * @returns {{lat: number, lon: number, latitude: number, longitude: number}} An object containing
- * latitude and longitude in degrees (lat, lon) and radians (latitude, longitude).
+ * Calculate subsolar point with proper coordinate transformations
  */
-
-//-------------------------------------------------2D-------------------------------------------------------
 export function getSubsolarPoint(date) {
-    //const d = toJulian(utcDate) - 2451545; // Days since J2000
-
-    const sunCoords = getSunCoords(date); // Use the accurate getSunCoords
-    const GMST = getGMST(date); // Greenwich Sidereal Time in radians
-
-    // Subsolar longitude 
-    let lonRad = (sunCoords.ra + GMST ) % (2 * Math.PI);
-    // Normalize longitude to [-π, π]
-    if (lonRad > Math.PI) lonRad -= 2 * Math.PI;
-    else if (lonRad < -Math.PI) lonRad += 2 * Math.PI;
-
-    const latRad = sunCoords.dec; // Subsolar latitude is the declination
-
+    const sunCoords = getSunCoords(date);
+    const GMST = getGMST(date);
+    
+    // CRITICAL: Solar longitude = RA - GMST
+    // This gives us the longitude where the sun is directly overhead
+    let sunLongitude = sunCoords.ra - GMST;
+    
+    // Normalize longitude to [-π, π] range
+    while (sunLongitude > Math.PI) sunLongitude -= 2 * Math.PI;
+    while (sunLongitude < -Math.PI) sunLongitude += 2 * Math.PI;
+    
+    const sunLatitude = sunCoords.dec;
+    
     return {
-        Sun_dec: latRad * (180 / Math.PI),   // Latitude in degrees
-        Sun_ra : -lonRad * (180 / Math.PI),   // Longitude in degrees
-        latitudeRad: latRad,              // Latitude in radians
-        longitudeRad: lonRad              // Longitude in radians
+        Sun_dec: radToDeg(sunLatitude),    // Subsolar latitude
+        Sun_ra: radToDeg(sunLongitude),    // Subsolar longitude
+        latitudeRad: sunLatitude,
+        longitudeRad: sunLongitude,
     };
 }
+
+// /**
+//  * Enhanced debug function with validation against known values
+//  */
+// export function debugSunPosition(date) {
+//     const coords = getSunCoords(date);
+//     const subsolar = getSubsolarPoint(date);
+//     const jd = toJulian(date);
+    
+//     console.log(`=== CORRECTED Sun Position Debug for ${date.toISOString()} ===`);
+//     console.log(`Julian Date: ${jd.toFixed(6)}`);
+//     console.log(`Days since J2000: ${coords.n.toFixed(6)}`);
+//     console.log(`RA: ${radToDeg(coords.ra).toFixed(3)}° (${(radToDeg(coords.ra)/15).toFixed(2)}h)`);
+//     console.log(`Dec: ${radToDeg(coords.dec).toFixed(3)}°`);
+//     console.log(`GMST: ${radToDeg(getGMST(date)).toFixed(3)}°`);
+//     console.log(`Subsolar Longitude: ${subsolar.Sun_ra.toFixed(3)}°`);
+//     console.log(`Subsolar Latitude: ${subsolar.Sun_dec.toFixed(3)}°`);
+//     console.log(`Intermediate values:`);
+//     console.log(`  n (days since J2000): ${coords.n.toFixed(3)}`);
+//     console.log(`  L0 (mean longitude): ${coords.L0.toFixed(3)}°`);
+//     console.log(`  M (mean anomaly): ${coords.M.toFixed(3)}°`);
+//     console.log(`  C (equation of center): ${coords.C.toFixed(3)}°`);
+//     console.log(`  L (true longitude): ${coords.L.toFixed(3)}°`);
+//     console.log(`  λ (apparent longitude): ${coords.lambda.toFixed(3)}°`);
+//     console.log(`  ε (obliquity): ${coords.epsilon.toFixed(3)}°`);
+    
+//     // Validation for July 10, 2025
+//     const month = date.getUTCMonth() + 1;
+//     const day = date.getUTCDate();
+//     if (month === 7 && day === 10) {
+//         const expectedRA_hours = 6.85; // ~6h 51m for July 10
+//         const expectedDec = 22.3;      // ~+22.3° for July 10
+//         const actualRA_hours = radToDeg(coords.ra) / 15;
+//         const actualDec = radToDeg(coords.dec);
+        
+//         const raError = Math.abs(actualRA_hours - expectedRA_hours);
+//         const decError = Math.abs(actualDec - expectedDec);
+        
+//         console.log(`📊 VALIDATION for July 10, 2025:`);
+//         console.log(`  Expected RA: ~${expectedRA_hours}h, Got: ${actualRA_hours.toFixed(2)}h, Error: ${raError.toFixed(2)}h`);
+//         console.log(`  Expected Dec: ~${expectedDec}°, Got: ${actualDec.toFixed(2)}°, Error: ${decError.toFixed(2)}°`);
+        
+//         if (raError < 0.1 && decError < 0.5) {
+//             console.log(`✅ Sun position is now ACCURATE!`);
+//         } else {
+//             console.log(`❌ Sun position still needs adjustment`);
+//         }
+//     }
+    
+//     return coords;
+// }

@@ -51,7 +51,8 @@
             font-size: 16px;
         }
 
-        .custom-contextmenu  li, .settings-contextmenu li {
+        .custom-contextmenu  li,
+        .settings-contextmenu li {
             padding: 2px 10px;
             cursor: pointer;
             white-space: nowrap;
@@ -80,8 +81,8 @@
         /* Sidebar Styles */
         .sidebar {
             width: 250px;
-            background: #ffffff;
-            color: rgb(0, 0, 0);
+            background: #ffffff; /* Mengubah warna latar belakang sidebar menjadi putih */
+            color: rgb(0, 0, 0); /* Mengubah warna font sidebar menjadi hitam */
             display: flex;
             flex-direction: column;
         }
@@ -102,6 +103,7 @@
             list-style: none;
             font-weight: normal;
             padding-left: 1rem;
+            /* Tambahkan ini untuk memastikan teks di item list berwarna hitam */
             color: rgb(0, 0, 0);
         }
 
@@ -116,14 +118,19 @@
             cursor: default;
         }
 
-        #single-files-list ul li, #constellation-files-list ul li, #ground-station-resource-list ul li, #link-budget-resource-list ul li {
+        #single-files-list ul li,
+        #constellation-files-list ul li, #ground-station-resource-list ul li, #link-budget-resource-list ul li {
             list-style: none;
             padding-left: 1.5rem;
             cursor: pointer;
+            /* Tambahkan ini untuk memastikan teks di sub-item list berwarna hitam */
             color: rgb(0, 0, 0);
         }
 
-        #single-files-list ul li:hover, #constellation-files-list ul li:hover, #ground-station-resource-list ul li:hover, #link-budget-resource-list ul li:hover { /* Tambahkan ini juga untuk Link Budget */
+        #single-files-list ul li:hover,
+        #constellation-files-list ul li:hover,
+        #ground-station-resource-list ul li:hover, /* Tambahkan ini */
+        #link-budget-resource-list ul li:hover { /* Tambahkan ini juga untuk Link Budget */
             background-color: #e9ecef;
         }
 
@@ -131,20 +138,20 @@
             width: 16px;
             text-align: center;
             margin-right: 6px;
-            color:rgb(59, 132, 228); 
+            color:rgb(59, 132, 228); /* Mengubah warna ikon menjadi abu-abu gelap agar terlihat di latar putih */
         }
 
         #output-menu ul {
             list-style: none;
             padding-left: 0.5rem;
-            color: rgb(0, 0, 0);
+            color: rgb(0, 0, 0); /* Mengubah warna font pada output-menu ul menjadi hitam */
         }
 
         #output-menu ul li {
             list-style: none;
             font-weight: normal;
             cursor: pointer;
-            color: rgb(0, 0, 0);
+            color: rgb(0, 0, 0); /* Mengubah warna font pada output-menu ul li menjadi hitam */
         }
 
         #output-menu ul li:hover {
@@ -173,21 +180,21 @@
             text-align: center;
             font-size: 14px;
             padding: 8px 0;
-            background-color: rgb(33, 92, 151);
-            color: white; 
-            border-bottom: 1px solid rgb(33, 92, 151);
-            border-radius: 0;
+            background-color: rgb(33, 92, 151); /* Warna latar belakang tab default */
+            color: white; /* Warna font tab default menjadi putih */
+            border-bottom: 1px solid rgb(33, 92, 151); /* Pastikan border bawah sesuai warna biru */
+            border-radius: 0; /* Menghilangkan border-radius untuk membuat persegi panjang */
         }
 
         .nav-tabs .nav-link.active {
-            background-color: rgb(33, 92, 151); 
-            color: white; 
-            border-bottom: 1px solid rgb(33, 92, 151); 
-            border-radius: 0; 
+            background-color: rgb(33, 92, 151); /* Warna latar belakang tab aktif */
+            color: white; /* Warna font tab aktif tetap putih */
+            border-bottom: 1px solid rgb(33, 92, 151); /* Pastikan border bawah tab aktif juga biru */
+            border-radius: 0; /* Menghilangkan border-radius untuk membuat persegi panjang */
         }
 
-        #animationStatusDisplay {
-            position: absolute; 
+        #animationStatusDisplay { /* Target kedua set */
+            position: absolute; /* Penting agar muncul di atas kanvas */
             top: 13px;
             right: 13px;
             background-color: rgba(0, 0, 0, 0.6);
@@ -195,7 +202,7 @@
             padding: 8px 15px;
             border-radius: 8px;
             font-size: 14px;
-            z-index: 10;
+            z-index: 10; /* Pastikan di atas elemen lain */
             backdrop-filter: blur(5px);
             display: flex;
             align-items: center;
@@ -203,8 +210,8 @@
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
         }
 
-        #simulationClockDisplay {
-            position: absolute; 
+        #simulationClockDisplay { /* Target kedua set */
+            position: absolute; /* Penting agar muncul di atas kanvas */
             top: 13px;
             left: 13px;
             background-color: rgba(0, 0, 0, 0.6);
@@ -212,7 +219,7 @@
             padding: 8px 15px;
             border-radius: 8px;
             font-size: 14px;
-            z-index: 10;
+            z-index: 10; /* Pastikan di atas elemen lain */
             backdrop-filter: blur(5px);
             display: flex;
             align-items: center;
@@ -220,8 +227,8 @@
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
         }
 
-        #animationStatusDisplay2D { 
-            position: absolute;
+        #animationStatusDisplay2D { /* Target kedua set */
+            position: absolute; /* Penting agar muncul di atas kanvas */
             top: 85px;
             right: 13px;
             background-color: rgba(0, 0, 0, 0.6);
@@ -229,7 +236,7 @@
             padding: 8px 15px;
             border-radius: 8px;
             font-size: 14px;
-            z-index: 10;
+            z-index: 10; /* Pastikan di atas elemen lain */
             backdrop-filter: blur(5px);
             display: flex;
             align-items: center;
@@ -237,8 +244,8 @@
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
         }
 
-        #simulationClockDisplay2D {
-            position: absolute;
+        #simulationClockDisplay2D { /* Target kedua set */
+            position: absolute; /* Penting agar muncul di atas kanvas */
             top: 85px;
             left: 262px;
             background-color: rgba(0, 0, 0, 0.6);
@@ -246,7 +253,7 @@
             padding: 8px 15px;
             border-radius: 8px;
             font-size: 14px;
-            z-index: 10;
+            z-index: 10; /* Pastikan di atas elemen lain */
             backdrop-filter: blur(5px);
             display: flex;
             align-items: center;
@@ -291,8 +298,8 @@
             border-radius: 8px;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
             z-index: 10000;
-            width: 350px;
-            padding: 0;
+            width: 350px; /* UBAH LEBAR DI SINI, misalnya 350px */
+            padding: 0; /* Hapus padding di sini, karena sudah ada di header/body/footer */
             cursor: move;
             border: none;
         }
@@ -341,11 +348,11 @@
         .custom-alert-footer {
             border-top: 1px solid #ddd;
             padding: 10px 20px;
-            display: flex;
+            display: flex; /* Tambahkan ini */
             justify-content: center;
         }
 
-        /* Styling untuk Header Pop-up Kustom */
+                /* Styling untuk Header Pop-up Kustom */
         .custom-popup-header {
             display: flex;
             justify-content: space-between;
@@ -355,9 +362,9 @@
         }
 
         .custom-popup-header .modal-title {
-            color: #333;
+            color: #333; /* Font gelap */
             font-weight: bold;
-            margin-bottom: 0;
+            margin-bottom: 0; /* Hapus margin default h5 */
         }
 
         /* Tombol Close 'X' di Header */
@@ -765,8 +772,7 @@
         populateResourceTab();
         populateReportsList();
         }
-
-
+        
         function populateReportsList() {
             const reportsList = document.getElementById('reports-list');
             reportsList.innerHTML = ''; // Pastikan daftar dibersihkan setiap kali
@@ -970,6 +976,7 @@
 
 
         // Show Ground Station Popup
+        // In simulation.blade.php - showGroundStationPopup function
         function showGroundStationPopup(gsId) {
             const gs = window.activeGroundStations.get(gsId);
             if (!gs) return;
@@ -990,8 +997,6 @@
             document.body.appendChild(popup);
             makeDraggable(popup);
 
-            // HAPUS listener untuk tombol .popup-close, HANYA Sisakan untuk .custom-popup-close-btn (X)
-            // popup.querySelector('.popup-close').addEventListener('click', () => popup.remove());
             popup.querySelector('.custom-popup-close-btn').addEventListener('click', () => popup.remove());
         }
 
@@ -1386,7 +1391,6 @@
         window.clearInputError = clearInputError; // Added as it's used within your script
 
         function showCustomConfirmation(message, title = 'Konfirmasi', confirmButtonText = 'OK', onConfirmCallback, showCancelButton = false) {
-            closeAllCustomPopups();
             document.getElementById('customAlertModalLabel').textContent = title;
             document.querySelector('#customAlertModal .modal-body').innerHTML = `<p>${message}</p>`;
 
@@ -1455,7 +1459,6 @@
         }
 
         function showModal(title, bodyHTML, onSave, onReset = null, fileNameToEdit = null, fileTypeToEdit = null) {
-            closeAllCustomPopups();
         document.getElementById('fileModalLabel').textContent = title;
         document.getElementById('fileModalBody').innerHTML = bodyHTML;
         const modalElement = document.getElementById('fileModal');
@@ -2443,7 +2446,7 @@
 
             modal.show();
         }
-
+        
         
 // --- EDIT MENU FUNCTIONS (triggered by double-click on resource items) ---
     window.editFile = editFile;
@@ -3149,7 +3152,6 @@ if (typeof window.setActiveControlButton === 'undefined') {
     };
 }
 
-// ---------------------------------------------- End of Edit -----------------------------
 
 
 // ----------------------------------------- VIEW MENU FUNCTIONS ---------------------------------------------
@@ -3212,178 +3214,281 @@ if (typeof window.setActiveControlButton === 'undefined') {
         }
 
         function toggleCloseView() {
-            if (!window.getSimulationCoreObjects) {
-                console.warn("3D simulation not initialized.");
-                showCustomAlert("3D simulation not ready yet.");
-                return;
-            }
-            if (window.activeSatellites.size === 0) {
-                showCustomAlert("No satellites to view in close-up. Please create an orbit first.");
-                return;
-            }
-            
-            const core3D = window.getSimulationCoreObjects();
-            const selectedSat = window.activeSatellites.get(window.selectedSatelliteId);
-            
-            // Capture current camera state before changes for undo/redo
-            const prevState = {
-                position: core3D.camera.position.clone(),
-                rotation: core3D.camera.rotation.clone(),
-                target: core3D.controls.target.clone(),
-                closeView: window.closeViewEnabled // Capture current closeView state
-            };
-
-            // Toggle the global flag in Earth3Dsimulation.js
-            window.closeViewEnabled = !window.closeViewEnabled;
-
-            // Update button text in UI
-            document.getElementById('closeViewButton').textContent = window.closeViewEnabled ? 'Normal View' : 'Close View';
-
-            // Tell Earth3Dsimulation.js to update its active meshes (sphere vs GLB)
-            window.activeSatellites.forEach(sat => sat.setActiveMesh(window.closeViewEnabled));
-
-            // Adjust camera immediately with GSAP animation
-            // Temporarily disable OrbitControls to allow GSAP to control the camera smoothly
-            core3D.controls.enabled = false;
-            
-            if (window.closeViewEnabled && selectedSat) {
-                const currentSatPos = selectedSat.mesh.position.clone();
-                const forwardDir = selectedSat.velocity.length() > 0 ? selectedSat.velocity.clone().normalize() : new THREE.Vector3(0, 0, 1);
-                const upDir = currentSatPos.clone().normalize();
-
-                // Define camera offset relative to satellite
-                const cameraOffset = forwardDir.clone().multiplyScalar(-0.08).add(upDir.clone().multiplyScalar(0.04));
-                const desiredCameraPos = currentSatPos.clone().add(cameraOffset);
-
-                gsap.to(core3D.camera.position, {
-                    duration: 0.5,
-                    x: desiredCameraPos.x,
-                    y: desiredCameraPos.y,
-                    z: desiredCameraPos.z,
-                    ease: "power2.inOut",
-                    onUpdate: () => core3D.controls.update(),
-                    onComplete: () => {
-                        // Re-enable controls only if still in closeView mode after animation
-                        // This prevents unexpected control re-enabling if toggleCloseView is called quickly again
-                        if (window.closeViewEnabled) {
-                            core3D.controls.enabled = true;
-                        }
-                    }
-                });
-                gsap.to(core3D.controls.target, {
-                    duration: 0.5,
-                    x: currentSatPos.x,
-                    y: currentSatPos.y,
-                    z: currentSatPos.z,
-                    ease: "power2.inOut",
-                    onUpdate: () => core3D.controls.update()
-                });
-
-                core3D.controls.object.up.copy(upDir);
-                core3D.controls.update();
-
-                // 1) record the sat’s current world-position
-                prevSatFollowPos.copy( selectedSat.mesh.position );
-
-                // optional: record the fixed camera→sat vector if you want to preserve the zoom-distance
-                followOffset
-                .copy( core3D.camera.position )
-                .sub( selectedSat.mesh.position );
-
-                // lock zoom so they never tumble back to a global Earth view
-                core3D.controls.minDistance = SCENE_EARTH_RADIUS * 0.02;  // ~2% of scene-Earth radius
-                core3D.controls.maxDistance = SCENE_EARTH_RADIUS * 0.15;  // ~15% of scene-Earth radius
-
-                // allow the user to tilt from straight up (sky) down to the horizon,
-                // but never “under” it (so Earth can’t swing overhead)
-                core3D.controls.minPolarAngle = 0;          // straight up
-                core3D.controls.maxPolarAngle = Math.PI * 0.6; // about 108°
-                
-
-
-            } else { // Exiting close view, return to normal view
-                core3D.controls.object.up.set(0, 1, 0); // Reset camera up direction
-
-                gsap.to(core3D.camera.position, {
-                    duration: 1.5,
-                    x: 0, y: 0, z: 5, // Default normal view position
-                    ease: "power2.inOut",
-                    onUpdate: () => core3D.controls.update(),
-                    onComplete: () => {
-                        // Re-enable controls after animation completes
-                        core3D.controls.enabled = true;
-                    }
-                });
-                gsap.to(core3D.controls.target, {
-                    duration: 1.5,
-                    x: 0, y: 0, z: 0, // Default normal view target
-                    ease: "power2.inOut",
-                    onUpdate: () => core3D.controls.update()
-                });
-
-                core3D.controls.minDistance = 0.001; // Restore default limits
-                core3D.controls.maxDistance = 1000;
-            }
-            // Record action for undo/redo after determining new state
-            const newState = {
-                position: core3D.camera.position.clone(), // Capture final animated position
-                rotation: core3D.camera.rotation.clone(),
-                target: core3D.controls.target.clone(),
-                closeView: window.closeViewEnabled // Capture new closeView state
-            };
-            recordAction({ type: 'viewToggle', prevState: prevState, newState: newState });
+        if (!window.getSimulationCoreObjects) {
+            console.warn("3D simulation not initialized.");
+            showCustomAlert("3D simulation not ready yet.");
+            return;
         }
 
-        // ----------------------------------------- END VIEW MENU FUNCTIONS ---------------------------------------------
+        // --- START OF FIX ---
+        // 1. Check if a satellite ID is selected.
+        if (!window.selectedSatelliteId || window.activeSatellites.size === 0) {
+            showCustomAlert("No satellite is selected to focus on. Please click one from the list in the 'Output' tab.");
+            return;
+        }
 
-// ------------------------------------- SAVE MENU FUNCTIONS ------------------------------------------------
-window.showSavePopup            = showSavePopup;
+        // 2. Get the satellite object from the map using the ID.
+        const selectedSat = window.activeSatellites.get(window.selectedSatelliteId);
+
+        // 3. Check if the satellite object was actually found.
+        if (!selectedSat) {
+            showCustomAlert("Selected satellite could not be found. It may have been deleted.");
+            window.selectedSatelliteId = null; // Clear the stale ID
+            return;
+        }
+        // --- END OF FIX ---
+
+        const core3D = window.getSimulationCoreObjects();
+
+        // The rest of the original logic can now proceed safely because `selectedSat` is guaranteed to be a valid object.
+        const prevState = {
+            position: core3D.camera.position.clone(),
+            rotation: core3D.camera.rotation.clone(),
+            target: core3D.controls.target.clone(),
+            closeView: window.closeViewEnabled
+        };
+
+        window.closeViewEnabled = !window.closeViewEnabled;
+        document.getElementById('closeViewButton').textContent = window.closeViewEnabled ? 'Normal View' : 'Close View';
+        window.activeSatellites.forEach(sat => sat.setActiveMesh(window.closeViewEnabled));
+        core3D.controls.enabled = false;
+
+        if (window.closeViewEnabled) {
+            // This block now works correctly.
+            const currentSatPos = selectedSat.mesh.position.clone();
+            const forwardDir = selectedSat.velocity.length() > 0 ? selectedSat.velocity.clone().normalize() : new THREE.Vector3(0, 0, 1);
+            const upDir = currentSatPos.clone().normalize();
+            const cameraOffset = forwardDir.clone().multiplyScalar(-0.08).add(upDir.clone().multiplyScalar(0.04));
+            const desiredCameraPos = currentSatPos.clone().add(cameraOffset);
+
+            gsap.to(core3D.camera.position, {
+                duration: 0.5,
+                x: desiredCameraPos.x,
+                y: desiredCameraPos.y,
+                z: desiredCameraPos.z,
+                ease: "power2.inOut",
+                onUpdate: () => core3D.controls.update(),
+                onComplete: () => {
+                    if (window.closeViewEnabled) {
+                        core3D.controls.enabled = true;
+                    }
+                }
+            });
+            gsap.to(core3D.controls.target, {
+                duration: 0.5,
+                x: currentSatPos.x,
+                y: currentSatPos.y,
+                z: currentSatPos.z,
+                ease: "power2.inOut",
+                onUpdate: () => core3D.controls.update()
+            });
+
+            core3D.controls.object.up.copy(upDir);
+            core3D.controls.update();
+
+        } else {
+            core3D.controls.object.up.set(0, 1, 0);
+            gsap.to(core3D.camera.position, {
+                duration: 1.5,
+                x: 0,
+                y: 0,
+                z: 5,
+                ease: "power2.inOut",
+                onUpdate: () => core3D.controls.update(),
+                onComplete: () => {
+                    core3D.controls.enabled = true;
+                }
+            });
+            gsap.to(core3D.controls.target, {
+                duration: 1.5,
+                x: 0,
+                y: 0,
+                z: 0,
+                ease: "power2.inOut",
+                onUpdate: () => core3D.controls.update()
+            });
+
+            core3D.controls.minDistance = 1.2;
+            core3D.controls.maxDistance = 10;
+        }
+
+        const newState = {
+            position: core3D.camera.position.clone(),
+            rotation: core3D.camera.rotation.clone(),
+            target: core3D.controls.target.clone(),
+            closeView: window.closeViewEnabled
+        };
+        recordAction({
+            type: 'viewToggle',
+            prevState: prevState,
+            newState: newState
+        });
+    }
+
+    // ----------------------------------------- END VIEW MENU FUNCTIONS ---------------------------------------------
+
+// ------------------------------------- SAVE MENU FUNCTIONS (Corrected) ------------------------------------------------
+
+// Expose functions to the global window object
+window.showSavePopup = showSavePopup;
 window.generateAndSaveSelected = generateAndSaveSelected;
+
+/**
+ * Calculates a satellite's lat/lon/alt at a specific UTC timestamp without
+ * altering the live simulation state. This is a "pure" function for accurate,
+ * on-demand position calculation.
+ * @param {Satellite} sat - The satellite object from window.activeSatellites.
+ * @param {number} utcTimestamp - The absolute UTC time in milliseconds.
+ * @returns {{latitudeDeg: number, longitudeDeg: number, altitudeKm: number}|null} An object with coordinates, or null on failure.
+ */
+function calculatePositionAtTime(sat, utcTimestamp) {
+    // This function replicates the core logic from sat.updatePosition but is "pure"
+    // and does not modify any global state, ensuring consistent results.
+    let positionEci;
+    const {
+        EarthRadius,
+        SCENE_EARTH_RADIUS
+    } = window.getSimulationCoreObjects();
+
+    // --- 1. Propagate to get ECI position at the given time ---
+
+    // Branch for TLE-based satellites using SGP4
+    if (sat.parsedTle) {
+        try {
+            const sgp4Result = window.propagateSGP4(sat.parsedTle, new Date(utcTimestamp));
+            if (sgp4Result && sgp4Result.position) {
+                positionEci = sgp4Result.position; // This is a THREE.Vector3 in scene units
+            } else {
+                console.warn(`SGP4 propagation failed for save function at ${new Date(utcTimestamp).toISOString()}`);
+                return null;
+            }
+        } catch (e) {
+            console.error(`Error during SGP4 propagation for save:`, e);
+            return null;
+        }
+    }
+    // Branch for Keplerian-based satellites
+    else {
+        const timeSinceSatelliteEpoch = (utcTimestamp - sat.initialEpochUTC) / 1000;
+
+        // Create a temporary satellite object for perturbation calculation to avoid modifying the live one.
+        const tempSat = {
+            params: { ...sat.params
+            },
+            initialEpochUTC: sat.initialEpochUTC,
+            initialMeanAnomaly: sat.initialMeanAnomaly,
+            initialRAAN: sat.initialRAAN,
+            // These are needed by updateOrbitalElements
+            initialArgPerigee: sat.params.argPerigeeRad,
+            initialSemiMajorAxis: sat.params.semiMajorAxis * EarthRadius,
+            initialEccentricity: sat.params.eccentricity,
+            currentMeanAnomaly: sat.currentMeanAnomaly,
+            currentRAAN: sat.currentRAAN,
+        };
+
+        // This function calculates perturbations and updates the state of tempSat
+        window.updateOrbitalElements(tempSat, timeSinceSatelliteEpoch);
+
+        // Now calculate the final ECI position using the perturbed elements
+        const pos = window.calculateSatellitePositionECI(
+            tempSat.params,
+            tempSat.currentMeanAnomaly,
+            tempSat.currentRAAN,
+            SCENE_EARTH_RADIUS
+        );
+        positionEci = new THREE.Vector3(pos.x, pos.y, pos.z);
+    }
+
+    if (!positionEci) {
+        return null; // Calculation failed
+    }
+
+    // --- 2. Convert ECI position to Geodetic (Lat/Lon/Alt) ---
+
+    // Get Earth's rotation (GMST) for the specific timestamp. This is the most robust method.
+    const gmst = window.getGMST(new Date(utcTimestamp));
+
+    // Rotate the ECI position vector to the ECEF frame by the calculated GMST.
+    const ecef = positionEci.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), -gmst);
+
+    // Convert the ECEF vector to geodetic coordinates.
+    const r_scene = ecef.length(); // distance from center in scene units
+    if (r_scene < 1e-6) return {
+        latitudeDeg: 0,
+        longitudeDeg: 0,
+        altitudeKm: -EarthRadius
+    };
+
+    const latRad = Math.asin(ecef.y / r_scene);
+    const lonRad = Math.atan2(-ecef.z, ecef.x);
+
+    const latitudeDeg = latRad * (180 / Math.PI);
+    const longitudeDeg = lonRad * (180 / Math.PI);
+
+    // Calculate altitude in kilometers.
+    const altitudeKm = (r_scene * EarthRadius) - EarthRadius;
+
+    return {
+        latitudeDeg,
+        longitudeDeg,
+        altitudeKm
+    };
+}
+
 
 // Show the “Save” dialog
 function showSavePopup() {
-  // remove any existing popup
-  document.querySelectorAll('.custom-popup').forEach(el=>el.remove());
+    // remove any existing popup
+    document.querySelectorAll('.custom-popup').forEach(el => el.remove());
 
-  // gather list of selectable satellites
-  const sats = [];
-  window.activeSatellites.forEach((sat, id) => {
-    sats.push({ id, name: sat.name, startEpoch: sat.initialEpochUTC });
-  });
-  if (!sats.length) {
-    // Memanggil showCustomAlert untuk menampilkan pesan yang konsisten
-    showCustomAlert("No active satellites to save", "Caution!");
-    return; // Penting untuk keluar dari fungsi setelah menampilkan alert
-  }
+    // gather list of selectable satellites
+    const sats = [];
+    window.activeSatellites.forEach((sat, id) => {
+        sats.push({
+            id,
+            name: sat.name,
+            startEpoch: sat.initialEpochUTC
+        });
+    });
+    if (!sats.length) {
+        showCustomAlert("No active satellites to save", "Caution!");
+        return;
+    }
 
-  // build popup container
-  const popup = document.createElement('div');
-  popup.className = 'custom-popup';
-  Object.assign(popup.style, {
-    position: 'absolute', left: '50%', top: '50%',
-    transform: 'translate(-50%,-50%)',
-    background: '#fff', color:'#000',
-    padding: '20px', border: '1px solid #ccc', zIndex:10000,
-    width: '360px',
-  });
+    // build popup container
+    const popup = document.createElement('div');
+    popup.className = 'custom-popup';
+    Object.assign(popup.style, {
+        position: 'absolute',
+        left: '50%',
+        top: '50%',
+        transform: 'translate(-50%,-50%)',
+        background: '#fff',
+        color: '#000',
+        padding: '20px',
+        border: '1px solid #ccc',
+        zIndex: 10000,
+        width: '360px',
+        boxShadow: '0 5px 15px rgba(0,0,0,0.3)'
+    });
 
-  // helper: ms → datetime-local string
-  const fmtLocal = ms => {
-    const dt = new Date(ms);
-    const pad = n=> String(n).padStart(2,'0');
-    return `${dt.getFullYear()}-${pad(dt.getMonth()+1)}-${pad(dt.getDate())}` +
-           `T${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
-  };
+    // helper: ms → datetime-local string
+    const fmtLocal = ms => {
+        const dt = new Date(ms);
+        const pad = n => String(n).padStart(2, '0');
+        return `${dt.getFullYear()}-${pad(dt.getMonth()+1)}-${pad(dt.getDate())}` +
+            `T${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
+    };
 
-  // build HTML
-  popup.innerHTML = `
+    // build HTML
+    popup.innerHTML = `
     <h5>Select Satellite & Interval</h5>
     <label>Satellite:</label>
     <select id="saveSatSelect" class="form-control mb-2">
       ${sats.map(s=>
         `<option value="${s.id}" data-start="${s.startEpoch}">
-           ${s.name}
-         </option>`
+            ${s.name}
+          </option>`
       ).join('')}
     </select>
     <label>Start Time:</label>
@@ -3417,160 +3522,155 @@ function showSavePopup() {
     </div>
   `;
 
-  document.body.appendChild(popup);
+    document.body.appendChild(popup);
 
-  const satSelect  = popup.querySelector('#saveSatSelect');
-  const startInput = popup.querySelector('#saveStartTime');
-  const endInput   = popup.querySelector('#saveEndTime');
-  const fmtRadios  = popup.querySelectorAll('input[name=saveFormat]');
-  const extSelect  = popup.querySelector('#saveFileExt');
+    const satSelect = popup.querySelector('#saveSatSelect');
+    const startInput = popup.querySelector('#saveStartTime');
+    const endInput = popup.querySelector('#saveEndTime');
+    const fmtRadios = popup.querySelectorAll('input[name=saveFormat]');
+    const extSelect = popup.querySelector('#saveFileExt');
 
-  // when SAT changes, update start/end constraints
-  function refreshTimes() {
-    const opt = satSelect.selectedOptions[0];
-    const startMs = Number(opt.dataset.start);
-    const iso     = fmtLocal(startMs);
-    startInput.value = iso;
-    endInput.min     = iso;
-    if (endInput.value < iso) endInput.value = iso;
-  }
-  satSelect.addEventListener('change', refreshTimes);
-  refreshTimes();
+    // when SAT changes, update start/end constraints
+    function refreshTimes() {
+        const opt = satSelect.selectedOptions[0];
+        const startMs = Number(opt.dataset.start);
+        const iso = fmtLocal(startMs);
+        startInput.value = iso;
+        endInput.min = iso;
+        if (endInput.value < iso) endInput.value = iso;
+    }
+    satSelect.addEventListener('change', refreshTimes);
+    refreshTimes();
 
-  // show/hide ext chooser depending on format
-  function toggleExt() {
-    extSelect.style.display =
-      popup.querySelector('input[name=saveFormat]:checked').value === 'coordinates'
-        ? 'inline-block'
-        : 'none';
-  }
-  fmtRadios.forEach(r=>r.addEventListener('change', toggleExt));
-  toggleExt();
+    // show/hide ext chooser depending on format
+    function toggleExt() {
+        extSelect.style.display =
+            popup.querySelector('input[name=saveFormat]:checked').value === 'coordinates' ?
+            'inline-block' :
+            'none';
+    }
+    fmtRadios.forEach(r => r.addEventListener('change', toggleExt));
+    toggleExt();
 
-  popup.querySelector('#saveCancel').onclick = ()=> popup.remove();
-  popup.querySelector('#saveDoIt').onclick   = ()=> generateAndSaveSelected(popup);
+    popup.querySelector('#saveCancel').onclick = () => popup.remove();
+    popup.querySelector('#saveDoIt').onclick = () => generateAndSaveSelected(popup);
 }
 
 // Generate & download the file
 function generateAndSaveSelected(popup) {
-  const satId   = popup.querySelector('#saveSatSelect').value;
-  const startTs = new Date(popup.querySelector('#saveStartTime').value).getTime();
-  const endTs   = new Date(popup.querySelector('#saveEndTime').value).getTime();
-  const step    = parseInt(popup.querySelector('#saveStep').value, 10) * 1000;
-  const fmt     = popup.querySelector('input[name=saveFormat]:checked').value;
-  const fileExt = popup.querySelector('#saveFileExt')?.value || 'csv';
+    const satId = popup.querySelector('#saveSatSelect').value;
+    const startTs = new Date(popup.querySelector('#saveStartTime').value).getTime();
+    const endTs = new Date(popup.querySelector('#saveEndTime').value).getTime();
+    const step = parseInt(popup.querySelector('#saveStep').value, 10) * 1000;
+    const fmt = popup.querySelector('input[name=saveFormat]:checked').value;
+    const fileExt = popup.querySelector('#saveFileExt')?.value || 'csv';
 
-  if (!satId || isNaN(endTs) || endTs < startTs) {
-    return alert('Please pick a valid end time (≥ start time).');
-  }
-  const sat = window.activeSatellites.get(satId);
-  if (!sat) return alert('Satellite not found.');
-
-  // Grab core objects and save original simulation state
-  const core     = window.getSimulationCoreObjects();
-  const origEpoch = core.currentEpochUTC;
-  const origSim   = core.totalSimulatedTime;
-
-  // CRITICAL FIX: Re‐base simulation to the sat's own epoch
-  core.setCurrentEpochUTC(sat.initialEpochUTC);
-  core.setTotalSimulatedTime(0);
-  
-  // CRITICAL FIX: Update Earth rotation manager for new epoch
-  window.earthRotationManager.initialize(sat.initialEpochUTC);
-
-  // Prepare header
-  const lines = [];
-  const altKm = (sat.mesh.position.length() * EarthRadius / SCENE_EARTH_RADIUS) - EarthRadius;
-  const { orbitalPeriod } = calculateDerivedOrbitalParameters(
-    (sat.params.semiMajorAxis - SCENE_EARTH_RADIUS) * (EarthRadius / SCENE_EARTH_RADIUS),
-    sat.params.eccentricity
-  );
-
-  if (fmt === 'tle') {
-    let txt = '';
-    if (sat.tleLine1 && sat.tleLine2) {
-      txt = sat.tleLine1 + "\n" + sat.tleLine2 + "\n";
-    } else {
-      txt = makePseudoTle(sat.name, {
-        epoch:             sat.initialEpochUTC,
-        inclination:       sat.params.inclinationRad * (180/Math.PI),
-        raan:              sat.currentRAAN * (180/Math.PI),
-        eccentricity:      sat.params.eccentricity,
-        argumentOfPerigee: sat.params.argPerigeeRad * (180/Math.PI),
-        trueAnomaly:       sat.currentTrueAnomaly * (180/Math.PI),
-        altitude:          altKm
-      }) + "\n";
+    if (!satId || isNaN(endTs) || endTs < startTs) {
+        showCustomAlert('Please pick a valid end time (must be after start time).', 'Error');
+        return;
     }
-    downloadText(`sat_${sat.name}.tle`, txt);
-    popup.remove();
-    
-    // CRITICAL FIX: Restore state AND Earth rotation manager
-    core.setCurrentEpochUTC(origEpoch);
-    core.setTotalSimulatedTime(origSim);
-    window.earthRotationManager.initialize(origEpoch);
-    sat.updatePosition(origSim, 0);
-    return;
-  }
+    const sat = window.activeSatellites.get(satId);
+    if (!sat) {
+        showCustomAlert('Selected satellite not found in the simulation.', 'Error');
+        return;
+    }
 
-  // Coordinates export header
-  if (fileExt === 'txt') {
-    lines.push(`Satellite Name:\t${sat.name}`);
-    lines.push(`Start Time:\t${new Date(startTs).toISOString()}`);
-    lines.push(`Stop Time:\t${new Date(endTs).toISOString()}`);
-    lines.push(`UTC Offset:\t0`);
-    lines.push(`Altitude (km):\t${altKm.toFixed(3)}`);
-    lines.push(`Inclination (°):\t${(sat.params.inclinationRad * 180/Math.PI).toFixed(3)}`);
-    lines.push(`Orbital Period (min):\t${(orbitalPeriod/60).toFixed(3)}`);
-    lines.push(`Orbit Type:\t${sat.params.eccentricity < 1e-3 ? 'Circular' : 'Elliptical'}`);
-    lines.push('');
-    lines.push(`Longitude\tLatitude\t\tTime (UTC)\tElapsed(s)`);
-  } else {
-    lines.push(`Satellite Name:,${sat.name}`);
-    lines.push(`Start Time:,${new Date(startTs).toISOString()}`);
-    lines.push(`Stop Time:,${new Date(endTs).toISOString()}`);
-    lines.push(`UTC Offset:,0`);
-    lines.push(`Altitude (km):,${altKm.toFixed(3)}`);
-    lines.push(`Inclination (°):,${(sat.params.inclinationRad * 180/Math.PI).toFixed(3)}`);
-    lines.push(`Orbital Period (min):,${(orbitalPeriod/60).toFixed(3)}`);
-    lines.push(`Orbit Type:,${sat.params.eccentricity < 1e-3 ? 'Circular' : 'Elliptical'}`);
-    lines.push('');
-    lines.push(`Longitude,Latitude,Time (UTC),Elapsed(s)`);
-  }
+    // ----- TLE export -----
+    if (fmt === 'tle') {
+        let txt = '';
+        if (sat.tleLine1 && sat.tleLine2) {
+            txt = sat.tleLine1 + "\n" + sat.tleLine2 + "\n";
+        } else {
+            // This part for generating a pseudo-TLE remains a snapshot-in-time, which is correct for TLEs.
+            const {
+                EarthRadius
+            } = window.getSimulationCoreObjects();
+            txt = makePseudoTle(sat.name, {
+                epoch: sat.initialEpochUTC,
+                inclination: sat.params.inclinationRad * (180 / Math.PI),
+                raan: sat.currentRAAN * (180 / Math.PI),
+                eccentricity: sat.params.eccentricity,
+                argumentOfPerigee: sat.params.argPerigeeRad * (180 / Math.PI),
+                trueAnomaly: sat.currentTrueAnomaly * (180 / Math.PI),
+                altitude: (sat.mesh.position.length() * EarthRadius) - EarthRadius
+            }) + "\n";
+        }
+        downloadText(`sat_${sat.name}.tle`, txt);
+        popup.remove();
+        return;
+    }
 
-  // Step through and record positions
-  for (let t = startTs; t <= endTs; t += step) {
-    const simSec = (t - sat.initialEpochUTC) / 1000;
-    core.setTotalSimulatedTime(simSec);
-    sat.updatePosition(simSec, 0);
+    // ----- Coordinates export -----
+    const lines = [];
+    const firstPos = calculatePositionAtTime(sat, startTs);
+    if (!firstPos) {
+        showCustomAlert('Could not calculate initial position for the satellite.', 'Error');
+        return;
+    }
 
-    const { latitudeDeg: lat, longitudeDeg: lon } = sat;
-    const elapsed = Math.round((t - startTs) / 1000);
+    const {
+        orbitalPeriod
+    } = calculateDerivedOrbitalParameters(
+        (sat.params.semiMajorAxis - 1) * window.EarthRadius, // Use scene-unit based calculation
+        sat.params.eccentricity
+    );
+
+    const header = {
+        "Satellite Name": sat.name,
+        "Start Time": new Date(startTs).toISOString(),
+        "Stop Time": new Date(endTs).toISOString(),
+        "UTC Offset": 0,
+        "Altitude (km)": firstPos.altitudeKm.toFixed(3),
+        "Inclination (°)": (sat.params.inclinationRad * 180 / Math.PI).toFixed(3),
+        "Orbital Period (min)": (orbitalPeriod / 60).toFixed(3),
+        "Orbit Type": sat.params.eccentricity < 1e-3 ? 'Circular' : 'Elliptical'
+    };
 
     if (fileExt === 'txt') {
-      lines.push(`${lon.toFixed(6)}\t${lat.toFixed(6)}\t${new Date(t).toISOString()}\t${elapsed}`);
-    } else {
-      lines.push(`${lon.toFixed(6)},${lat.toFixed(6)},${new Date(t).toISOString()},${elapsed}`);
+        Object.entries(header).forEach(([key, value]) => lines.push(`${key}:\t${value}`));
+        lines.push('');
+        lines.push(`Longitude\tLatitude\tAltitude(km)\tTime (UTC)\t\tElapsed(s)`);
+    } else { // CSV
+        Object.entries(header).forEach(([key, value]) => lines.push(`"${key}","${value}"`));
+        lines.push('');
+        lines.push(`Longitude,Latitude,Altitude(km),Time (UTC),Elapsed(s)`);
     }
-  }
 
-  // CRITICAL FIX: Restore the original simulation state AND Earth rotation manager
-  core.setCurrentEpochUTC(origEpoch);
-  core.setTotalSimulatedTime(origSim);
-  window.earthRotationManager.initialize(origEpoch);
-  sat.updatePosition(origSim, 0);
+    // Loop through the time range and calculate position at each step
+    // This no longer modifies the live simulation state.
+    for (let t = startTs; t <= endTs; t += step) {
+        const posData = calculatePositionAtTime(sat, t);
 
-  // Trigger download
-  const ext = `.${fileExt}`;
-  downloadText(`sat_${sat.name}${ext}`, lines.join('\n') + '\n');
-  popup.remove();
+        if (posData) {
+            const {
+                latitudeDeg: lat,
+                longitudeDeg: lon,
+                altitudeKm: alt
+            } = posData;
+            const elapsed = Math.round((t - startTs) / 1000);
+            const timeStr = new Date(t).toISOString();
+
+            if (fileExt === 'txt') {
+                lines.push(`${lon.toFixed(6)}\t${lat.toFixed(6)}\t${alt.toFixed(3)}\t${timeStr}\t${elapsed}`);
+            } else { // CSV
+                lines.push(`${lon.toFixed(6)},${lat.toFixed(6)},${alt.toFixed(3)},"${timeStr}",${elapsed}`);
+            }
+        }
+    }
+
+    // The live simulation was never altered, so no state restoration is needed.
+
+    // download the generated file
+    const finalExt = fmt === 'coordinates' ? `.${fileExt}` : '.tle';
+    downloadText(`sat_${sat.name}_coords${finalExt}`, lines.join('\n') + '\n');
+    popup.remove();
 }
-
-
 
 // ------------------------------------- END SAVE MENU FUNCTIONS ---------------------------------------------
 
+
   // ------------------------------------- LOAD TLE FUNCTION ------------------------------------------------
-// This function will now create its own pop-up for TLE data entry.
+  // This function will now create its own pop-up for TLE data entry.
 function LoadTLE() {
     // Remove any other popups first
     document.querySelectorAll('.custom-popup').forEach(el => el.remove());
@@ -3778,117 +3878,27 @@ function LoadTLE() {
         // --- Three.js related functions (now directly call exposed functions from Earth3Dsimulation.js) ---
         window.zoomIn = zoomIn;
         window.zoomOut = zoomOut;
-
-        // Zoom in function for camera control
+        // Zoom in and out functions for camera control
         function zoomIn() {
             const core3D = window.getSimulationCoreObjects();
             if (!core3D.camera || !core3D.controls) { console.warn("Three.js not initialized for zoom."); return; }
-
-            const prevState = {
-                position: core3D.camera.position.clone(),
-                rotation: core3D.camera.rotation.clone(),
-                target: core3D.controls.target.clone()
-            };
-
-            // Tentukan posisi target zoom in yang baru
-            // Kita akan mendekatkan kamera ke target kontrolnya (biasanya pusat Bumi atau satelit)
-            // Cara paling sederhana adalah mendekatkan kamera ke target kontrolnya
-            const newTargetPosition = core3D.controls.target.clone(); // Ambil target saat ini
-            const newCameraPosition = core3D.camera.position.clone();
-            newCameraPosition.sub(newTargetPosition); // Vektor dari target ke kamera
-            newCameraPosition.multiplyScalar(0.8); // Perkecil jarak sebesar 20% (zoom in)
-            newCameraPosition.add(newTargetPosition); // Tambahkan kembali ke target
-
-            // Rekam state baru (sebelum animasi selesai, ini akan menjadi target akhir animasi)
-            const newState = {
-                position: newCameraPosition.clone(),
-                rotation: core3D.camera.rotation.clone(), // Rotasi kamera mungkin tidak berubah banyak
-                target: newTargetPosition.clone()
-            };
-
-            // Nonaktifkan sementara OrbitControls agar GSAP bisa mengontrol kamera dengan mulus
-            core3D.controls.enabled = false;
-
-            gsap.to(core3D.camera.position, {
-                duration: 0.5, // Durasi animasi dalam detik
-                x: newCameraPosition.x,
-                y: newCameraPosition.y,
-                z: newCameraPosition.z,
-                ease: "power2.out", // Jenis easing untuk efek smooth
-                onUpdate: () => core3D.controls.update(), // Perbarui kontrol saat animasi berjalan
-                onComplete: () => {
-                    core3D.controls.enabled = true; // Aktifkan kembali kontrol setelah animasi selesai
-                    core3D.controls.update();
-                }
-            });
-
-            // Animasikan juga target kontrol jika kamera bergerak relatif terhadap target
-            // Jika targetnya selalu (0,0,0) maka ini tidak perlu, tapi jika mengikuti satelit akan penting
-            gsap.to(core3D.controls.target, {
-                duration: 0.5,
-                x: newTargetPosition.x,
-                y: newTargetPosition.y,
-                z: newTargetPosition.z,
-                ease: "power2.out",
-                onUpdate: () => core3D.controls.update()
-            });
-
+            const prevState = { position: core3D.camera.position.clone(), rotation: core3D.camera.rotation.clone(), target: core3D.controls.target.clone() };
+            core3D.camera.position.z -= 1;
+            core3D.controls.update();
+            const newState = { position: core3D.camera.position.clone(), rotation: core3D.camera.rotation.clone(), target: core3D.controls.target.clone() };
             recordAction({ type: 'camera', prevState: prevState, newState: newState });
         }
-
         // Zoom out function
         function zoomOut() {
             const core3D = window.getSimulationCoreObjects();
             if (!core3D.camera || !core3D.controls) { console.warn("Three.js not initialized for zoom."); return; }
-
-            const prevState = {
-                position: core3D.camera.position.clone(),
-                rotation: core3D.camera.rotation.clone(),
-                target: core3D.controls.target.clone()
-            };
-
-            // Tentukan posisi target zoom out yang baru
-            const newTargetPosition = core3D.controls.target.clone(); // Ambil target saat ini
-            const newCameraPosition = core3D.camera.position.clone();
-            newCameraPosition.sub(newTargetPosition); // Vektor dari target ke kamera
-            newCameraPosition.multiplyScalar(1.25); // Perbesar jarak sebesar 25% (zoom out)
-            newCameraPosition.add(newTargetPosition); // Tambahkan kembali ke target
-
-            // Rekam state baru
-            const newState = {
-                position: newCameraPosition.clone(),
-                rotation: core3D.camera.rotation.clone(),
-                target: newTargetPosition.clone()
-            };
-
-            // Nonaktifkan sementara OrbitControls
-            core3D.controls.enabled = false;
-
-            gsap.to(core3D.camera.position, {
-                duration: 0.5, // Durasi animasi
-                x: newCameraPosition.x,
-                y: newCameraPosition.y,
-                z: newCameraPosition.z,
-                ease: "power2.out",
-                onUpdate: () => core3D.controls.update(),
-                onComplete: () => {
-                    core3D.controls.enabled = true; // Aktifkan kembali kontrol
-                    core3D.controls.update();
-                }
-            });
-
-            // Animasikan juga target kontrol jika perlu
-            gsap.to(core3D.controls.target, {
-                duration: 0.5,
-                x: newTargetPosition.x,
-                y: newTargetPosition.y,
-                z: newTargetPosition.z,
-                ease: "power2.out",
-                onUpdate: () => core3D.controls.update()
-            });
-
+            const prevState = { position: core3D.camera.position.clone(), rotation: core3D.camera.rotation.clone(), target: core3D.controls.target.clone() };
+            core3D.camera.position.z += 1;
+            core3D.controls.update();
+            const newState = { position: core3D.camera.position.clone(), rotation: core3D.camera.rotation.clone(), target: core3D.controls.target.clone() };
             recordAction({ type: 'camera', prevState: prevState, newState: newState });
         }
+
         // --- HISTORY MANAGEMENT FUNCTIONS ---
         function saveHistoryToLocalStorage() {
             try {
@@ -4071,7 +4081,10 @@ function LoadTLE() {
                 linkBudgetAnalysis.set(fileName, oldData);
             }
             saveFilesToLocalStorage();
-            addFileToResourceSidebar(fileName, oldData, fileType); // Re-add/update sidebar entr
+            addFileToResourceSidebar(fileName, oldData, fileType); // Re-add/update sidebar entry
+            // updateOutputSidebar(oldData); // Update output display
+            // updateSatelliteListUI(); // Refresh UI lists
+            // selectSatellite(fileName); // Re-select to update data display (for satellites)
         }
 
 
@@ -4088,6 +4101,9 @@ function LoadTLE() {
             }
             saveFilesToLocalStorage();
             addFileToResourceSidebar(fileName, newData, fileType); // Re-add/update sidebar entry
+            //updateOutputSidebar(newData); // Update output display
+           // updateSatelliteListUI(); // Refresh UI lists
+            //selectSatellite(fileName); // Re-select to update data display (for satellites)
         }
         
         // Undo function to revert the last action
@@ -4127,12 +4143,9 @@ function LoadTLE() {
                     default:
                         console.warn("Unknown action type for undo:", action.type);
                 }
-                populateResourceTab();
-                populateReportsList();
-                // --- TEMPATKAN KODE INI DI SINI setelah populateReportsList(); ---
-                const outputTabBtn = document.getElementById('outputTabBtn');
-                const resourceTabBtn = document.getElementById('resourceTabBtn'); // Ini sebenarnya tidak digunakan dalam baris selanjutnya, tapi tidak masalah jika ada.
-                // --- END OF PLACEMENT ---
+                //updateSatelliteListUI(); // Ensure UI lists are up to date after undo/redo
+                // Attempt to re-select the original selected item if it still exists
+                const currentSelectedData = fileOutputs.get(window.selectedSatelliteId) || groundStations.get(window.selectedSatelliteId) || linkBudgetAnalysis.get(window.selectedSatelliteId);
             } else {
                 showCustomAlert("No actions to undo");
             }
@@ -4175,12 +4188,9 @@ function LoadTLE() {
                     default:
                         console.warn("Unknown action type for redo:", action.type);
                 }
-                populateResourceTab();
-                populateReportsList();
-                // --- TEMPATKAN KODE INI DI SINI setelah populateReportsList(); ---
-                const outputTabBtn = document.getElementById('outputTabBtn');
-                const resourceTabBtn = document.getElementById('resourceTabBtn'); // Ini sebenarnya tidak digunakan dalam baris selanjutnya, tapi tidak masalah jika ada.
-                // --- END OF PLACEMENT ---
+                //updateSatelliteListUI(); // Ensure UI lists are up to date after undo/redo
+                const currentSelectedData = fileOutputs.get(window.selectedSatelliteId) || groundStations.get(window.selectedSatelliteId) || linkBudgetAnalysis.get(window.selectedSatelliteId);
+            
             } else {
                 showCustomAlert("No actions to redo");
             }
@@ -4188,12 +4198,40 @@ function LoadTLE() {
 
 // --- LOGOUT FUNCTION ---
         window.handleLogout = handleLogout; // Expose this one too
-function handleLogout() {
-    console.log("handleLogout function called.");
-    console.log("Attempting to redirect to:", window.location.origin + "/");
-    window.location.href = "/"; // Target homepage
+        function handleLogout() {
+            console.log("handleLogout function called.");
+            // Clear all local storage related to the simulation
+            localStorage.removeItem(LOCAL_STORAGE_FILES_KEY);
+            localStorage.removeItem(LOCAL_STORAGE_GROUND_STATIONS_KEY);
+            localStorage.removeItem(LOCAL_STORAGE_LINK_BUDGETS_KEY);
+            localStorage.removeItem(LOCAL_STORAGE_HISTORY_KEY);
+            localStorage.removeItem(LOCAL_STORAGE_HISTORY_INDEX_KEY);
+            localStorage.removeItem(SIMULATION_STATE_KEY); // Clear the main simulation state
+            localStorage.removeItem(FIRST_LOAD_FLAG_KEY); // Clear the first load flag
 
-}
+            // Clear in-memory data
+            fileOutputs.clear();
+            groundStations.clear();
+            linkBudgetAnalysis.clear();
+            appHistory = [];
+            appHistoryIndex = -1;
+
+            // Clear 3D scene objects
+            if (window.clearSimulationScene) {
+                window.clearSimulationScene();
+            }
+
+            // Clear UI elements
+            document.querySelector('#single-files-list ul').innerHTML = '';
+            document.querySelector('#constellation-files-list ul').innerHTML = '';
+            document.querySelector('#ground-station-resource-list ul').innerHTML = '';
+            document.querySelector('#link-budget-resource-list ul').innerHTML = '';
+            document.querySelector('#output-menu ul').innerHTML = '';
+            //updateSatelliteListUI(); // Reset satellite list display
+
+            console.log("Redirecting to homepage...");
+            window.location.href = "/"; // Redirect to your home page or login page
+        } //End of handleLogout function
       
         window.is2DViewActive = false; // Default: 3D view aktif
         // --- DOMContentLoaded: Initial setup and load ---
@@ -4288,50 +4326,6 @@ function handleLogout() {
             toggle2DViewVisuals();
         }, 500);
     });
-
-    // Tambahkan fungsi ini di dalam <script type="module"> Anda,
-    // di scope global atau di dekat fungsi-fungsi pembantu lainnya.
-    function closeAllCustomPopups() {
-        // Menutup popup satelit/ground station yang sedang aktif
-        if (window.activeSatellitePopup) {
-            const { element, updateHandler } = window.activeSatellitePopup;
-            element.remove();
-            window.removeEventListener('epochUpdated', updateHandler); // Hapus listener
-            window.activeSatellitePopup = null;
-        }
-
-        // Menutup popup lain yang mungkin menggunakan class 'custom-popup'
-        // yang tidak dikelola oleh activeSatellitePopup
-        document.querySelectorAll('.custom-popup').forEach(popup => {
-            // Hanya hapus jika popup tersebut bukan bagian dari Bootstrap modal
-            // Bootstrap modal memiliki class 'modal-dialog' pada elemen parent dari '.custom-popup'
-            // atau kita bisa membedakan berdasarkan ID yang diketahui (misal, untuk save popup)
-            if (!popup.closest('.modal-dialog')) {
-                popup.remove();
-            }
-        });
-    }
-
-    // Tambahkan di mana saja di scope <script type="module"> Anda
-// Fungsi ini akan membersihkan detail yang mungkin ditampilkan di tab Output
-function updateOutputSidebar(data = null) {
-    // Implementasi sederhana: membersihkan area detail atau menampilkan info default
-    const reportsList = document.getElementById('reports-list');
-    const linkReportsList = document.getElementById('link-reports-list'); // Jika Anda punya area terpisah untuk link reports
-
-    // Clear the existing reports and links output to rebuild it
-    reportsList.innerHTML = '';
-    linkReportsList.innerHTML = ''; // Pastikan ini juga dibersihkan jika diperlukan
-
-    // Membangun ulang daftar laporan utama
-    populateReportsList();
-
-
-}
-
-function updateSatelliteListUI() {
-    populateResourceTab(); // Memanggil fungsi yang sudah ada untuk me-render ulang daftar resource
-}
     </script>
 </body>
 </html>

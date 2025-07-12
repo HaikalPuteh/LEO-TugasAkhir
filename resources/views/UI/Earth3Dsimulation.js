@@ -7,6 +7,7 @@ import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRe
 
 // Import utility functions
 import getStarfield from "./getStarfield.js";
+import { glowmesh } from "./glowmesh.js";
 import { gsap } from 'gsap';
 
 // Import astronomical calculation functions
@@ -32,92 +33,6 @@ import {
     SCENE_EARTH_RADIUS
 } from "./parametersimulation.js";
 
-
-// ============= EARTH ROTATION PRECISION MANAGER (ADD THIS SECTION) =============
-class EarthRotationManager {
-    constructor() {
-        this.baseEpochUTC = 0;           // Base epoch timestamp (ms)
-        this.baseGMST = 0;               // GMST at base epoch (radians)
-        this.lastCalculatedTime = 0;     // Last simulation time calculated
-        this.rotationOffset = 0;         // Accumulated rotation offset
-        this.maxAccumulationTime = 3600; // Reset accumulation every hour (seconds)
-    }
-
-    initialize(epochUTC) {
-        this.baseEpochUTC = epochUTC;
-        this.baseGMST = getGMST(new Date(epochUTC));
-        this.lastCalculatedTime = 0;
-        this.rotationOffset = 0;
-        console.log(`Earth rotation precision manager initialized: epoch=${new Date(epochUTC).toISOString()}`);
-    }
-
-    getRotationAngle(simulatedTimeSeconds) {
-        // Check if we need to reset accumulation to prevent precision loss
-        if (simulatedTimeSeconds - this.lastCalculatedTime > this.maxAccumulationTime) {
-            this.resetAccumulation(simulatedTimeSeconds);
-        }
-
-        // Calculate rotation using high-precision method
-        const deltaTime = simulatedTimeSeconds - this.lastCalculatedTime;
-        const deltaRotation = deltaTime * EARTH_ANGULAR_VELOCITY_RAD_PER_SEC;
-        
-        // Accumulate rotation with modulo to prevent overflow
-        this.rotationOffset = (this.rotationOffset + deltaRotation) % (2 * Math.PI);
-        this.lastCalculatedTime = simulatedTimeSeconds;
-
-        // Total rotation = base GMST + accumulated rotation
-        const totalRotation = this.baseGMST + this.rotationOffset;
-        
-        // Normalize to [0, 2π) to prevent floating-point drift
-        return ((totalRotation % (2 * Math.PI)) + (2 * Math.PI)) % (2 * Math.PI);
-    }
-
-    peekRotationAngle(simulatedTimeSeconds) {
-        // Get rotation without updating internal state (for lookups)
-        const totalRotation = this.baseGMST + (simulatedTimeSeconds * EARTH_ANGULAR_VELOCITY_RAD_PER_SEC);
-        return ((totalRotation % (2 * Math.PI)) + (2 * Math.PI)) % (2 * Math.PI);
-    }
-
-    resetAccumulation(currentSimulatedTime) {
-        // Calculate new base epoch
-        const newBaseEpochUTC = this.baseEpochUTC + (currentSimulatedTime * 1000);
-        
-        // Recalculate base GMST for new epoch
-        this.baseGMST = getGMST(new Date(newBaseEpochUTC));
-        
-        // Reset accumulation
-        this.baseEpochUTC = newBaseEpochUTC;
-        this.lastCalculatedTime = 0;
-        this.rotationOffset = 0;
-        
-        console.log(`Earth rotation reset at t=${currentSimulatedTime}s to prevent precision loss`);
-    }
-
-    validateAccuracy(simulatedTime) {
-        // Compare with direct calculation
-        const directGMST = getGMST(new Date(this.baseEpochUTC + simulatedTime * 1000));
-        const managerAngle = this.peekRotationAngle(simulatedTime);
-        
-        const error = Math.abs(directGMST - managerAngle);
-        const errorDegrees = error * (180 / Math.PI);
-        
-        return {
-            directGMST: directGMST,
-            managerAngle: managerAngle,
-            errorRadians: error,
-            errorDegrees: errorDegrees,
-            isAccurate: errorDegrees < 0.001 // 0.001 degree tolerance
-        };
-    }
-}
-
-// Create the rotation manager instance
-const earthRotationManager = new EarthRotationManager();
-window.earthRotationManager = earthRotationManager; // Expose globally for 2D simulation
-// ============= END EARTH ROTATION PRECISION MANAGER =============
-
-
-
 // Scene variables
 let camera, scene, renderer, controls, earthGroup;
 let earthMesh, cloudsMesh, atmosphereGlowMesh;
@@ -139,21 +54,22 @@ window.currentSpeedMultiplier = 1;
 window.EARTH_ANGULAR_VELOCITY_RAD_PER_SEC = EARTH_ANGULAR_VELOCITY_RAD_PER_SEC;
 window.is2DViewActive = false;
 
+
 // Expose these for use in simulation.blade.php
 window.calculateDerivedOrbitalParameters = calculateDerivedOrbitalParameters; // EXPOSED GLOBALLY
 window.EarthRadius = EarthRadius; // EXPOSED GLOBALLY
 window.DEG2RAD = DEG2RAD; // EXPOSED GLOBALLY
-window.SCENE_EARTH_RADIUS = SCENE_EARTH_RADIUS; // EXPOSED GLOBALLY
-window.propagateSGP4 = propagateSGP4; // EXPOSE GLOBALLY for validation functions
-window.getGMST = getGMST; // EXPOSE GLOBALLY for TLE epoch handling
+window.SCENE_EARTH_RADIUS        = SCENE_EARTH_RADIUS; // EXPOSED GLOBALLY
 
 // Satellite model loading variables
 let satelliteModelLoaded = false;
 let globalSatelliteGLB = null;
 let lastAnimationFrameTime = performance.now();
 
+
 // Holds THREE.Line objects for every (gsId, satId) pair
 window.gsSatLinkLines = new Map(); //For Connection Analysis
+
 
 // Initialize the 3D scene
 function init3DScene() {
@@ -164,12 +80,13 @@ function init3DScene() {
     }
 
     // Set up renderer with antialiasing and logarithmic depth buffer for precision
-    //renderer = new THREE.WebGLRenderer({ antialias: true, logarithmicDepthBuffer: true });
-    renderer = new THREE.WebGLRenderer({ antialias: true});
+    renderer = new THREE.WebGLRenderer({ antialias: true, logarithmicDepthBuffer: true });
     renderer.setSize(earthContainer.offsetWidth, earthContainer.offsetHeight);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.setPixelRatio(window.devicePixelRatio); // Improve rendering quality on high-DPI screens
+
+
 
     // Initialize CSS2DRenderer for labels
     window.labelRenderer = new CSS2DRenderer();
@@ -181,6 +98,7 @@ function init3DScene() {
     earthContainer.style.position = 'relative'; 
     earthContainer.appendChild(renderer.domElement);
     earthContainer.appendChild( labelRenderer.domElement );
+
 
     // Initialize scene and camera
     scene = new THREE.Scene();
@@ -209,32 +127,35 @@ function init3DScene() {
     const cloudsMap = textureLoader.load("/textures/Earth_Clouds.jpg");
     //const cloudsAlphaMap = textureLoader.load("/textures/05_earthcloudmaptrans.jpg");
 
+
     // Earth geometry: Changed to SphereGeometry with high segments for realism
     const earthGeometry = new THREE.SphereGeometry(SCENE_EARTH_RADIUS, 256, 256); // Increased segments for smoother sphere
 
     // Earth mesh with Day/Night Shader for realistic illumination
-    // In Earth3Dsimulation.js - Earth mesh creation with improved shader
     const earthShader = new THREE.ShaderMaterial({
         uniforms: {
             uEarthDayMap: { value: earthDayMap },
             uEarthNightMap: { value: earthNightMap },
             uEarthSpecularMap: { value: earthSpecularMap },
             uEarthBumpMap: { value: earthBumpMap },
-            uSunDirection: { value: sunLightDirection },
-            uTime: { value: 0.0 },
-            uCameraPosition: { value: camera.position },
-            bumpScale: { value: 0.02 },
-            shininess: { value: 1500.0 }
+            uSunDirection: { value: sunLightDirection }, // Initial light direction, will be updated dynamically
+            uTime: { value: 0.0 }, // Time uniform for dynamic effects
+            uCameraPosition: { value: camera.position }, // Camera position for specular calculation
+            bumpScale: { value: 0.04 }, // Control intensity of bump map
+            shininess: { value: 1000.0 } // Control size/intensity of specular highlight
         },
         vertexShader: `
             varying vec2 vUv;
-            varying vec3 vWorldNormal;
-            varying vec3 vWorldPosition;
+            varying vec3 vWorldNormal; // World-space normal
+            varying vec3 vWorldPosition; // World-space position
 
             void main() {
                 vUv = uv;
+                // Calculate world-space normal
                 vWorldNormal = normalize(mat3(modelMatrix) * normal);
+                // Calculate world-space position
                 vWorldPosition = (modelMatrix * vec4(position, 1.0)).xyz;
+
                 gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
             }
         `,
@@ -243,139 +164,69 @@ function init3DScene() {
             uniform sampler2D uEarthNightMap;
             uniform sampler2D uEarthSpecularMap;
             uniform sampler2D uEarthBumpMap;
-            uniform vec3 uSunDirection;
-            uniform vec3 uCameraPosition;
-            uniform float bumpScale;
-            uniform float shininess;
+            uniform vec3      uSunDirection;  // world-space sun vector
+            uniform float     uTime;
+            uniform vec3      uCameraPosition; // Camera's world position
+            uniform float     bumpScale;
+            uniform float     shininess;
 
             varying vec2 vUv;
             varying vec3 vWorldNormal;
             varying vec3 vWorldPosition;
 
             void main() {
-                // Sample all textures
-                vec4 dayColor = texture2D(uEarthDayMap, vUv);
+                // Fetch day/night textures
+                vec4 dayColor   = texture2D(uEarthDayMap, vUv);
                 vec4 nightColor = texture2D(uEarthNightMap, vUv);
-                vec3 specularMap = texture2D(uEarthSpecularMap, vUv).rgb;
-                vec3 normalMap = texture2D(uEarthBumpMap, vUv).rgb * 2.0 - 1.0;
-                
-                // Apply normal mapping
-                vec3 perturbedNormal = normalize(vWorldNormal + normalMap * bumpScale);
-                
-                // Lighting calculation
-                vec3 lightDir = normalize(uSunDirection);
-                float NdotL = dot(perturbedNormal, lightDir);
-                
-                // Smooth day/night transition with wider terminator
-                float dayNightFactor = smoothstep(-0.05, 0.05, NdotL);
-                
-                // FIXED: Proper day/night blending without transparency issues
-                vec3 baseColor = mix(
-                    nightColor.rgb,   // Dim night lights slightly
-                    dayColor.rgb,           // Full day color
-                    dayNightFactor
-                );
-                
-                // Ocean specular highlights (only on day side)
-                vec3 viewDir = normalize(uCameraPosition - vWorldPosition);
-                vec3 reflectDir = reflect(-lightDir, perturbedNormal);
-                float specular = pow(max(dot(viewDir, reflectDir), 0.0), shininess);
-                vec3 specularColor = specularMap * specular * dayNightFactor * 0.4;
-                
-                // CRITICAL FIX: Ensure completely opaque output
-                gl_FragColor = vec4(baseColor + specularColor, 1.0);
+
+                // Bump mapping: perturb the world normal
+                vec3 mapN       = texture2D(uEarthBumpMap, vUv).rgb * 2.0 - 1.0;
+                // Use the world normal for perturbation
+                vec3 perturbedNormal = normalize(vWorldNormal + mapN * bumpScale);
+
+                // Diffuse lighting term in world space
+                float lightIntensity = dot(perturbedNormal, normalize(uSunDirection));
+
+                // Smooth blend between day and night textures
+                // Adjust smoothstep range for a softer/harder terminator line
+                float blendFactor = smoothstep(-0.1, 0.1, lightIntensity);
+                vec4 baseColor = mix(nightColor, dayColor, blendFactor);
+
+                // Specular lighting in world space
+                vec3 viewDir = normalize(uCameraPosition - vWorldPosition); // Vector from fragment to camera
+                vec3 reflDir = reflect(-normalize(uSunDirection), perturbedNormal); // Reflected light direction
+                float spec  = pow(max(dot(viewDir, reflDir), 0.0), shininess);
+                vec3  specCol = texture2D(uEarthSpecularMap, vUv).rgb * spec;
+
+                // Final color is base color + specular highlight
+                gl_FragColor = baseColor + vec4(specCol, 1.0);
             }
         `,
-        // CRITICAL FIXES for transparency issue:
-        transparent: false,           // Earth should NOT be transparent
-        side: THREE.FrontSide,       // Only render front faces
-        depthWrite: true,            // Write to depth buffer
-        depthTest: true,             // Test depth buffer
-        alphaTest: 0,                // No alpha testing
-        blending: THREE.AdditiveBlending, // Standard blending
+        transparent: false,
     });
     earthMesh = new THREE.Mesh(earthGeometry, earthShader);
     earthGroup.add(earthMesh); // Add to the rotating group
 
-    const cloudGeometry = new THREE.SphereGeometry(SCENE_EARTH_RADIUS * 1.004, 256, 256);
-    cloudsMesh = new THREE.Mesh(cloudGeometry, new THREE.MeshStandardMaterial({
-    map: cloudsMap,
-    transparent: true,
-    opacity: 0.25,
-    blending: THREE.AdditiveBlending,
-    side: THREE.FrontSide,
-    depthWrite: false,  // Prevent z-fighting with Earth
-    depthTest: true
+    // Clouds mesh: Enhanced opacity and blending for better visualization
+    cloudsMesh = new THREE.Mesh(earthGeometry, new THREE.MeshStandardMaterial({
+        map: cloudsMap,
+        //transparent: false, //Changed to true for opacity to work
+        opacity: 0.2, // Increased opacity for better visibility
+        blending: THREE.AdditiveBlending, // Makes clouds appear light and airy
+        //alphaMap: cloudsAlphaMap, // Controls cloud transparency based on a separate texture
     }));
+    cloudsMesh.scale.setScalar(SCENE_EARTH_RADIUS * 1.002); // Slightly further out from Earth
     earthGroup.add(cloudsMesh);
 
-    // In Earth3Dsimulation.js - Atmosphere glow mesh setup
-    // Create and add atmosphere glow
-    function createAtmosphereGlow() {
-    const atmosphereGeometry = new THREE.SphereGeometry(SCENE_EARTH_RADIUS * 1.01, 256, 256);
+    // Atmosphere glow mesh (inner glow): Uses custom glowmesh shader
+    atmosphereGlowMesh = new THREE.Mesh(earthGeometry, glowmesh({
+        rimHex: 0x0088ff, // Blue color for the rim of the glow
+        facingHex: 0xE0F0FF, // Lighter color for the part facing the camera
+    }));
+    atmosphereGlowMesh.scale.setScalar(SCENE_EARTH_RADIUS * 1.01); // Larger scale for a more prominent glow
+    earthGroup.add(atmosphereGlowMesh);
+
     
-    const atmosphereMaterial = new THREE.ShaderMaterial({
-        uniforms: {
-            uSunDirection: { value: sunLightDirection },
-            uCameraPosition: { value: camera.position },
-            uGlowColor: { value: new THREE.Color(0x4da6ff) },
-            uRimColor: { value: new THREE.Color(0x87ceeb) }
-        },
-        vertexShader: `
-            varying vec3 vWorldNormal;
-            varying vec3 vWorldPosition;
-            varying vec3 vViewDirection;
-
-            void main() {
-                vWorldNormal = normalize(mat3(modelMatrix) * normal);
-                vWorldPosition = (modelMatrix * vec4(position, 1.0)).xyz;
-                vViewDirection = normalize(cameraPosition - vWorldPosition);
-                
-                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-            }
-        `,
-        fragmentShader: `
-            uniform vec3 uSunDirection;
-            uniform vec3 uCameraPosition;
-            uniform vec3 uGlowColor;
-            uniform vec3 uRimColor;
-
-            varying vec3 vWorldNormal;
-            varying vec3 vWorldPosition;
-            varying vec3 vViewDirection;
-
-            void main() {
-                vec3 normal = normalize(vWorldNormal);
-                vec3 viewDir = normalize(vViewDirection);
-                vec3 sunDir = normalize(uSunDirection);
-                
-                // Fresnel effect for atmospheric rim
-                float fresnel = 1.0 - abs(dot(viewDir, normal));
-                fresnel = pow(fresnel, 2.5);
-                
-                // Sun illumination factor
-                float sunDot = dot(normal, sunDir);
-                float sunInfluence = smoothstep(-0.5, 0.5, sunDot);
-                
-                // Combine effects
-                vec3 glowColor = mix(uGlowColor * 0.3, uRimColor, sunInfluence);
-                float intensity = fresnel * (0.2 + 0.8 * sunInfluence);
-                
-                gl_FragColor = vec4(glowColor, intensity * 0.6);
-            }
-        `,
-        transparent: true,
-        side: THREE.BackSide,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false,
-        depthTest: true
-    });
-
-    return new THREE.Mesh(atmosphereGeometry, atmosphereMaterial);
-    }
-    atmosphereGlowMesh = createAtmosphereGlow();
-    scene.add(atmosphereGlowMesh); // Add to scene, NOT earthGroup
-
     // Add starfield to the scene
     scene.add(getStarfield({ numStars: 4000 })); // Pass numStars for higher density
 
@@ -398,52 +249,35 @@ function init3DScene() {
 }
 
 
-// In Earth3Dsimulation.js - Updated sun direction function with validation
 function updateSunDirection(simTime) {
     const now = new Date(window.currentEpochUTC + simTime * 1000);
-    const { ra, dec } = getSunCoords(now);
+    const { ra, dec } = getSunCoords(now); // ra and dec are J2000 ECI coordinates
 
-    // FIXED: Correct transformation from J2000 ECI to Three.js coordinates
-    // J2000 ECI standard: X = vernal equinox, Y = 90° from X in equatorial plane, Z = north pole
-    // Three.js: X = right, Y = up (north), Z = toward viewer
-    
-    const cosRA = Math.cos(ra);
-    const sinRA = Math.sin(ra);
-    const cosDec = Math.cos(dec);
-    const sinDec = Math.sin(dec);
-    
-    // Standard J2000 ECI coordinates
-    const xJ2000 = cosDec * cosRA;  // Toward vernal equinox
-    const yJ2000 = cosDec * sinRA;  // 90° from vernal equinox in equatorial plane  
-    const zJ2000 = sinDec;          // Toward north pole
-    
-    // Transform to Three.js coordinate system:
-    // Three.js X = J2000 X (vernal equinox direction preserved)
-    // Three.js Y = J2000 Z (north pole becomes "up")
-    // Three.js Z = -J2000 Y (to maintain right-handed coordinate system)
-    const x3 = xJ2000;   // Vernal equinox direction
-    const y3 = zJ2000;   // North pole -> up
-    const z3 = -yJ2000;  // Complete right-handed system
+    // Calculate J2000 ECI components directly from RA and Dec
+    const xJ2000 = Math.cos(dec) * Math.cos(ra);
+    const yJ2000 = Math.cos(dec) * Math.sin(ra);
+    const zJ2000 = Math.sin(dec);
 
-    sunLightDirection.set(x3, y3, z3).normalize();
-    
-    // Position sun light far away in the calculated direction
-    const sunDistance = 10;
-    sunLight.position.copy(sunLightDirection).multiplyScalar(sunDistance);
-    
-    // Update Earth shader uniforms
-    if (earthMesh && earthMesh.material.uniforms) {
-        earthMesh.material.uniforms.uSunDirection.value.copy(sunLightDirection);
-        earthMesh.material.uniforms.uCameraPosition.value.copy(camera.position);
-    }
+    // Map J2000 ECI (Z-up) to Three.js scene coordinates (Y-up)
+    // X_3JS = X_J2000
+    // Y_3JS = Z_J2000
+    // Z_3JS = Y_J2000
+    const x3 = xJ2000;
+    const y3 = zJ2000;
+    const z3 = yJ2000;
 
-    // Update atmosphere glow
-    if (atmosphereGlowMesh && atmosphereGlowMesh.material.uniforms) {
-        atmosphereGlowMesh.material.uniforms.uSunDirection.value.copy(sunLightDirection);
+    sunLightDirection.set(x3, y3, z3);
+    // Set sunLight position far away in the calculated direction
+    sunLight.position.copy(sunLightDirection).normalize().multiplyScalar(5);
+
+    // Update both shaders with the sun's direction in the fixed ECI scene frame
+    earthMesh.material.uniforms.uSunDirection.value.copy(sunLight.position).normalize();
+    earthMesh.material.uniforms.uCameraPosition.value.copy(camera.position);
+
+    if (atmosphereGlowMesh.material.uniforms.uSunDirection) {
+        atmosphereGlowMesh.material.uniforms.uSunDirection.value.copy(sunLight.position).normalize();
         atmosphereGlowMesh.material.uniforms.uCameraPosition.value.copy(camera.position);
     }
-    
-    
 }
 
 
@@ -454,6 +288,7 @@ function drawOrbitPath(satellite) {
 
     const tempRAAN = satellite.currentRAAN;
     const tempArgPerigee = satellite.params.argPerigeeRad;
+    //To Do Check : argPerigeeRad is in radians, from UI/UX
 
     for (let i = 0; i <= numPathPoints; i++) {
         const trueAnomaly_path = (i / numPathPoints) * 2 * Math.PI;
@@ -465,9 +300,13 @@ function drawOrbitPath(satellite) {
         };
         // Ensure calculateSatellitePositionECI correctly takes SCENE_EARTH_RADIUS as scaling factor
         const tempPosition = calculateSatellitePositionECI(tempParams, E_to_M(TrueAnomaly_to_E(trueAnomaly_path, e), e), tempRAAN, SCENE_EARTH_RADIUS);
-        const position = new THREE.Vector3(tempPosition.x, tempPosition.y, tempPosition.z);
+        const position = new THREE.Vector3(tempPosition.x, tempPosition.y, tempPosition.z)
 
-        // FIXED: Remove double rotation - orbit paths are in ECI frame
+        // —— apply the same initial GMST offset you applied to earthGroup & sats ——
+            position.applyAxisAngle(
+            new THREE.Vector3(0,1,0),
+            window.initialEarthRotationOffset
+            );
         points.push(position);
     }
 
@@ -485,127 +324,98 @@ function drawOrbitPath(satellite) {
     scene.add(satellite.orbitLine); // Added to scene
 }
 
-/**
- * [CORRECTED] Calculates and displays the satellite's coverage cone.
- * This version fixes floating-point instability and uses the correct
- * geometric formula for the 2D map's coverage radius.
- * @param {Satellite} sat - The satellite object.
- */
+
 function updateCoverageCone(sat) {
-  // --- Cleanup previous cone ---
+  // ——— cleanup ———
   if (sat.coverageCone) {
     scene.remove(sat.coverageCone);
     sat.coverageCone.geometry.dispose();
     sat.coverageCone.material.dispose();
     sat.coverageCone = null;
   }
-
-  // --- Validate Inputs ---
-  const beamDeg = sat.params.beamwidth;
-  if (beamDeg <= 0 || beamDeg >= 180) {
-    sat.coverageAngleRad = 0; // Ensure coverage is reset
-    return;
+  if (sat.coverageRing) {
+    scene.remove(sat.coverageRing);
+    sat.coverageRing.geometry.dispose();
+    sat.coverageRing.material.dispose();
+    sat.coverageRing = null;
   }
+
+  const beamDeg = sat.params.beamwidth;
+  if (beamDeg <= 0 || beamDeg >= 180) return;
 
   const R = SCENE_EARTH_RADIUS;
   const P = sat.mesh.position.clone();
-  const d = P.length(); // Distance from Earth center to satellite
+  const d = P.length();
+  const β = THREE.MathUtils.degToRad(beamDeg / 2);
 
-  // If satellite is inside or on the surface, no cone is possible.
-  if (d <= R) {
-    sat.coverageAngleRad = 0;
-    return;
+  // —— law of sines φ = arcsin((d/R)·sinβ) – β, clamped by horizon ——  
+  let φ = Math.asin(Math.min(1, (d / R) * Math.sin(β))) - β;
+  const φ_horizon = Math.acos(R / d);
+  if (φ < 0 || φ > φ_horizon) {
+    // either beam too narrow or aims past horizon → no coverage
+    if (β < φ_horizon) return;
+    φ = φ_horizon;
   }
+  sat.coverageAngleRad = φ;
 
-  const β = THREE.MathUtils.degToRad(beamDeg / 2); // Half beamwidth in radians
+  // —— cone dims ——  
+  const height     = d - R * Math.cos(φ);
+  const coneRadius = R * Math.sin(φ);
+  if (height <= 0 || coneRadius <= 0) return;
 
-  // --- Calculate Angles ---
-  // Angle at the satellite from its nadir to the Earth's horizon (the limb)
-  const angleToHorizon = Math.acos(R / d);
-
-  // The actual angle used for coverage is the smaller of the beamwidth and the angle to the horizon.
-  const angleAtSatellite = Math.min(β, angleToHorizon);
-
-  // If the effective angle is zero, there's no coverage to draw.
-  if (angleAtSatellite <= 0) {
-    sat.coverageAngleRad = 0;
-    return;
-  }
-
-  // --- ROBUSTLY Calculate Central Angle (φ) for 2D Map ---
-  // We use the Law of Sines on the triangle formed by (Earth Center, Satellite, Coverage Edge).
-  // The angle at the coverage edge is γ.  φ + angleAtSatellite + γ = π
-  // From Law of Sines: sin(γ) = (d/R) * sin(angleAtSatellite)
-  const sin_gamma_arg = (d / R) * Math.sin(angleAtSatellite);
-  
-  // Clamp the argument to asin to prevent floating-point errors where it might slightly exceed 1.0
-  const clamped_arg = Math.max(-1, Math.min(1, sin_gamma_arg));
-  const gamma = Math.asin(clamped_arg);
-  
-  // The correct central angle, φ, is derived from the sum of angles in a triangle.
-  const centralAngle = Math.PI - angleAtSatellite - gamma;
-
-  if (isNaN(centralAngle) || centralAngle <= 0) {
-    sat.coverageAngleRad = 0;
-    return;
-  }
-
-  // Store the CORRECT central angle for the 2D map and other calculations.
-  sat.coverageAngleRad = centralAngle;
-
-  // --- 3D CONE VISUALIZATION ---
-  // The cone for visualization is a visual aid. Its dimensions are calculated
-  // based on the geometry of the coverage area on the Earth's curved surface.
-  const visualHeight = d - R * Math.cos(angleAtSatellite);
-  const visualConeRadius = R * Math.sin(angleAtSatellite);
-
-  if (visualHeight <= 0 || visualConeRadius <= 0) {
-    return; // Don't draw a cone with invalid dimensions.
-  }
-
-  // Build the cone mesh
-  const coneGeo = new THREE.ConeGeometry(visualConeRadius, visualHeight, 256, 1, true);
-  coneGeo.translate(0, -visualHeight / 2, 0); // Position the cone's apex at the origin
+  // —— build the cone ——  
+  const coneGeo = new THREE.ConeGeometry(coneRadius, height, 256, 1, true);
+  // keep the apex at the sat by translating down half the height
+  coneGeo.translate(0, -height/2, 0);
 
   const coneMat = new THREE.MeshBasicMaterial({
-    color: 0x00ffff,
+    color:       0x00ffff,
     transparent: true,
-    opacity: 0.2,
-    side: THREE.DoubleSide
+    opacity:     0.2,
+    side:        THREE.DoubleSide
   });
-
   const cone = new THREE.Mesh(coneGeo, coneMat);
-  cone.position.copy(P); // Move the cone to the satellite's position
+  cone.position.copy(P);
 
-  // Point the cone from the satellite towards the Earth's center (nadir).
+  // point +Y → nadir
   const nadir = P.clone().negate().normalize();
-  // The cone's default orientation is along +Y, so we align its -Y axis with the nadir direction.
-  const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, -1, 0), nadir);
+  const q     = new THREE.Quaternion()
+    .setFromUnitVectors(new THREE.Vector3(0, -1, 0), nadir);
   cone.setRotationFromQuaternion(q);
 
   scene.add(cone);
   sat.coverageCone = cone;
 }
 
-
 function updateNadirLine(satellite) {
     if (satellite.nadirLine) {
         scene.remove(satellite.nadirLine);
         satellite.nadirLine.geometry.dispose();
         satellite.nadirLine.material.dispose();
+        satellite.nadirLine = null;
     }
-    const satPositionECI = satellite.mesh.position;
-    
-    // The nadir point in the ECI frame is simply the satellite's position vector
-    // scaled down to the Earth's surface.
-    const nadirPointECI = satPositionECI.clone().normalize().multiplyScalar(SCENE_EARTH_RADIUS);
+    const points = [];
+    const satPositionECI = satellite.mesh.position; // Satellite position is already in Three.js ECI coordinates
 
-    const points = [satPositionECI, nadirPointECI];
+    // Get the current Earth rotation angle from the earthGroup (around Three.js Y-axis)
+    const earthRotationAngle = earthGroup.rotation.y;
 
-    satellite.nadirLine = new THREE.Line(
-        new THREE.BufferGeometry().setFromPoints(points), 
-        new THREE.LineBasicMaterial({ color: 0x888888, linewidth: 2 })
-    );
+    // 1. Transform satellite's ECI position (in Three.js coords) to ECEF frame (in Three.js coords)
+    // This is equivalent to rotating the ECI frame *back* by Earth's rotation around its Y-axis (which is ECI Z)
+    const satPositionECEF_in_ThreeJsCoords = satPositionECI.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), -earthRotationAngle);
+
+    // 2. Calculate the nadir point on Earth's surface in ECEF frame (in Three.js coords)
+    // This point is on the Earth's sphere, directly below the satellite in the Earth-fixed frame
+    const nadirPointECEF_in_ThreeJsCoords = satPositionECEF_in_ThreeJsCoords.clone().normalize().multiplyScalar(SCENE_EARTH_RADIUS);
+
+    // 3. Transform the nadir point from ECEF back to ECI frame to draw the line in the scene
+    // This is applying the current Earth rotation to the ECEF nadir point
+    const nadirPointECI = nadirPointECEF_in_ThreeJsCoords.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), earthRotationAngle);
+
+    points.push(satPositionECI); // Start point: Satellite's ECI position
+    points.push(nadirPointECI); // End point: Nadir point on Earth's surface in ECI
+
+    satellite.nadirLine = new THREE.Line(new THREE.BufferGeometry().setFromPoints(points), new THREE.LineBasicMaterial({ color: 0x888888, linewidth: 2 }));
     scene.add(satellite.nadirLine);
 }
 
@@ -668,7 +478,7 @@ THREE.MathUtils.acosSafe = function(x) {
   return Math.acos(THREE.MathUtils.clamp(x, -1, 1));
 };
 
-// Satellite class definition
+
 class Satellite {
     constructor(id, name, params, initialMeanAnomaly, initialRAAN, initialEpochUTC, tleLine1 = null, tleLine2 = null) {
         this.id = id;
@@ -690,15 +500,7 @@ class Satellite {
         if (this.tleLine1 && this.tleLine2) {
             try {
                 this.parsedTle = parseTle(this.tleLine1, this.tleLine2);
-                // IMPORTANT: Sync simulation epoch with TLE epoch
-                this.initialEpochUTC = this.parsedTle.epochTimestamp;
-                
-                // Update global simulation epoch if this is the first/only satellite
-                if (window.activeSatellites.size === 0) {
-                    window.currentEpochUTC = this.parsedTle.epochTimestamp;
-                    window.totalSimulatedTime = 0;
-                    window.initialEarthRotationOffset = getGMST(new Date(this.parsedTle.epochTimestamp));
-                }
+                this.initialEpochUTC = this.parsedTle.epochTimestamp; // Use TLE epoch
             } catch (error) {
                 console.error(`Failed to parse TLE for satellite ${this.id}:`, error);
                 this.parsedTle = null; // Fallback to Keplerian if TLE is invalid
@@ -759,20 +561,14 @@ class Satellite {
 
         if (this.parsedTle) {
             // Use SGP4 propagation for TLE-based satellites
-            try {
-                const sgp4Result = propagateSGP4(this.parsedTle, currentDateTime);
-                if (sgp4Result && sgp4Result.position) {
-                    newPositionEciThreeJs = sgp4Result.position;
-                    newVelocityEciThreeJs = sgp4Result.velocity || new THREE.Vector3(0,0,0);
-                } else {
-                    console.warn(`SGP4 propagation failed for satellite ${this.id}. Using last known position.`);
-                    newPositionEciThreeJs = this.mesh.position.clone();
-                    newVelocityEciThreeJs = new THREE.Vector3(0,0,0);
-                }
-            } catch (error) {
-                console.error(`SGP4 error for satellite ${this.id}:`, error);
-                // Fallback to current position
-                newPositionEciThreeJs = this.mesh.position.clone();
+            const sgp4Result = propagateSGP4(this.parsedTle, currentDateTime);
+            if (sgp4Result && sgp4Result.position) {
+                newPositionEciThreeJs = sgp4Result.position;
+                newVelocityEciThreeJs = sgp4Result.velocity || new THREE.Vector3(0,0,0); // Ensure velocity is available
+            } else {
+                console.warn(`SGP4 propagation failed for satellite ${this.id}. Keeping last known position.`);
+                // If propagation fails, keep the current position and velocity zero.
+                newPositionEciThreeJs = this.mesh.position;
                 newVelocityEciThreeJs = new THREE.Vector3(0,0,0);
             }
         } else {
@@ -792,9 +588,11 @@ class Satellite {
             newPositionEciThreeJs = new THREE.Vector3(x, y, z);
             newVelocityEciThreeJs = new THREE.Vector3(); // Placeholder for Keplerian velocity (can be calculated if needed)
         }
-        
-        // FIXED: Remove double rotation - Earth rotation is handled by earthGroup.rotation.y
-        // Satellite position is already in correct ECI frame
+        // apply the same sidereal offset that we applied to the EarthGroup at t=0
+        newPositionEciThreeJs.applyAxisAngle(
+        new THREE.Vector3(0,1,0),
+        window.initialEarthRotationOffset
+        );
         this.mesh.position.copy(newPositionEciThreeJs);
 
         // Update velocity (used for camera logic in close view)
@@ -811,19 +609,19 @@ class Satellite {
 
         // Convert current ECI position to latitude and longitude for ground track (2D)
         // 1) Compute the total rotation (initial GMST + elapsed spin)
-         const θ = earthRotationManager.peekRotationAngle(window.totalSimulatedTime);
+        const θ = window.initialEarthRotationOffset + window.totalSimulatedTime * window.EARTH_ANGULAR_VELOCITY_RAD_PER_SEC;
 
-        // 2) "Undo" it in one go (ECI→ECEF)
+        // 2) “Undo” it in one go (ECI→ECEF)
         const ecef = this.mesh.position.clone().applyAxisAngle(new THREE.Vector3(0,1,0), -θ);
 
-        // 3) Spherical → lat/lon with improved numerical stability
-        const r = ecef.length();
-        const latRad = Math.asin(ecef.y / r); // Use asin for better numerical stability
-        let lonRad = Math.atan2(-ecef.z, ecef.x); // Standard atan2 without negation
+        // 3) Spherical → lat/lon
+        const latRad = Math.atan2(ecef.y, Math.hypot(ecef.x, ecef.z));
+        let   lonRad = -Math.atan2(ecef.z, ecef.x);
 
-        // 4) Convert to degrees 
+        // 4) Convert to degrees and normalize longitude to [−180,180]
         const latDeg = latRad * (180/Math.PI);
-        const lonDeg = lonRad * (180/Math.PI); // atan2 already returns [-π, π], so this is correct
+        let   lonDeg = lonRad * (180/Math.PI);
+        lonDeg = ((lonDeg + 540) % 360) - 180;
 
         // 5) Store for your 2D ground-track
         this.latitudeDeg  = latDeg;
@@ -837,11 +635,7 @@ class Satellite {
         // Update the satellite's mesh position and visibility
         updateCoverageCone(this);
         updateNadirLine(this);
-        
-        // Only draw orbit path for Keplerian satellites (not TLE)
-        if (!this.parsedTle) {
-            drawOrbitPath(this);
-        }
+        drawOrbitPath(this);
     }
 
     /**
@@ -877,48 +671,49 @@ class Satellite {
      * Disposes of the satellite's meshes and lines to free up memory.
      */
     dispose() {
-        if (this.sphereMesh) { 
-            scene.remove(this.sphereMesh); 
-            this.sphereMesh.geometry.dispose(); 
-            this.sphereMesh.material.dispose(); 
-        }
-        if (this.glbMesh) {
-            scene.remove(this.glbMesh);
-            this.glbMesh.traverse((child) => {
-                if (child.isMesh) {
-                    child.geometry.dispose();
-                    if (child.material.isMaterial) child.material.dispose();
-                    else if (Array.isArray(child.material)) child.material.forEach(mat => mat.dispose());
-                }
-            });
-        }
-        if (this.orbitLine) { 
-            scene.remove(this.orbitLine); 
-            this.orbitLine.geometry.dispose(); 
-            this.orbitLine.material.dispose(); 
-        }
-        if (this.coverageCone) { 
-            scene.remove(this.coverageCone); 
-            this.coverageCone.geometry.dispose(); 
-            this.coverageCone.material.dispose(); 
-        }
-        if (this.nadirLine) { 
-            scene.remove(this.nadirLine); 
-            this.nadirLine.geometry.dispose(); 
-            this.nadirLine.material.dispose(); 
-        }
-
-        // Remove the CSS2D label object and its DOM element
-        if (this.labelObject) {
-            this.mesh.remove(this.labelObject);
-            this.labelObject = null;
-        }
-
-        if (this._labelElement) {
-            this._labelElement.remove();
-            this._labelElement = null;
-        }
+    if (this.sphereMesh) { 
+      scene.remove(this.sphereMesh); 
+      this.sphereMesh.geometry.dispose(); 
+      this.sphereMesh.material.dispose(); 
     }
+    if (this.glbMesh) {
+      scene.remove(this.glbMesh);
+      this.glbMesh.traverse((child) => {
+        if (child.isMesh) {
+          child.geometry.dispose();
+          if (child.material.isMaterial) child.material.dispose();
+          else if (Array.isArray(child.material)) child.material.forEach(mat => mat.dispose());
+        }
+      });
+    }
+    if (this.orbitLine) { 
+      scene.remove(this.orbitLine); 
+      this.orbitLine.geometry.dispose(); 
+      this.orbitLine.material.dispose(); 
+    }
+    if (this.coverageCone) { 
+      scene.remove(this.coverageCone); 
+      this.coverageCone.geometry.dispose(); 
+      this.coverageCone.material.dispose(); 
+    }
+    if (this.nadirLine) { 
+      scene.remove(this.nadirLine); 
+      this.nadirLine.geometry.dispose(); 
+      this.nadirLine.material.dispose(); 
+    }
+
+    // 5) Remove the CSS2D label object _and_ its DOM element
+    if (this.labelObject) {
+        this.mesh.remove(this.labelObject);    // remove the CSS2DObject
+        this.labelObject = null;
+    }
+
+    if (this._labelElement) {
+      this._labelElement.remove();
+      this._labelElement = null;
+    }
+  }
+
 
     updateParametersFromCurrentPosition(newParams, newEpochUTC) {
         if (this.tleLine1 && this.tleLine2) {
@@ -948,6 +743,7 @@ class Satellite {
         this.updatePosition(window.totalSimulatedTime, 0);
     }
 
+
     updateTrueAnomalyOnly(newTrueAnomalyRad) {
         if (this.parsedTle) {
             console.warn("Cannot update true anomaly directly for TLE satellites. Use TLE update if available.");
@@ -965,17 +761,17 @@ class Satellite {
 
 //--------------------------------------------- Start of the Label Creation---------------------------------
 function createSatelliteLabel(sat) {
-    const div = document.createElement('div');
-    div.className = 'satellite-label';
-    div.textContent = sat.name;
-    div.style.color = 'white';
-    div.style.fontSize = '12px';
-    div.style.whiteSpace = 'nowrap';
-    const label = new CSS2DObject(div);
-    label.position.set(0, 0.02, 0);
-    sat.labelObject = label;
-    sat.mesh.add(label);
-    sat._labelElement = div;
+  const div = document.createElement('div');
+  div.className = 'satellite-label';
+  div.textContent = sat.name;
+  div.style.color = 'white';
+  div.style.fontSize = '12px';
+  div.style.whiteSpace = 'nowrap';
+  const label = new CSS2DObject(div);
+  label.position.set(0, 0.02, 0);
+  sat.labelObject = label;       // ← keep a reference
+  sat.mesh.add(label);
+  sat._labelElement = div;
 }
 
 /**
@@ -985,11 +781,11 @@ function createSatelliteLabel(sat) {
  */
 window.highlightSatelliteInScene = function(id) {
     window.activeSatellites.forEach(sat => {
-        if (sat.sphereMesh) {
-            const mat = sat.sphereMesh.material;
-            mat.color.setHex(0x0000ff);
+       if (sat.sphereMesh) {
+        const mat = sat.sphereMesh.material;
+        mat.color.setHex(0x0000ff);
             if (mat.emissive) {
-                mat.emissive.setHex(0x000000);
+            mat.emissive.setHex(0x000000);
             }
         }
         if (sat.glbMesh) {
@@ -1148,60 +944,7 @@ class GroundStation {
      * Updates the coverage cone visualization for the ground station.
      */
     updateCoverageCone() {
-    // Remove existing cone if it exists to avoid duplicates/memory leaks
-    if (this.coverageCone) {
-        earthGroup.remove(this.coverageCone);
-        this.coverageCone.geometry.dispose();
-        this.coverageCone.material.dispose();
-        this.coverageCone = null;
-    }
-    
-    // FIX: Return early if minimum elevation angle is 0 or invalid
-    if (this.minElevationAngle <= 0 || this.minElevationAngle >= 90) {
-        return; // Don't create any cone
-    }
-    
-    const minElevRad = this.minElevationAngle * DEG2RAD;
-    const GsConeHalfAngle = Math.PI / 2 - minElevRad;
-    const visualConeHeight = 0.2;
-    const visualConeRadiusAtTop = Math.tan(GsConeHalfAngle) * visualConeHeight;
-
-    // Additional validation for cone dimensions
-    if (visualConeHeight <= 0 || visualConeRadiusAtTop <= 0 || isNaN(visualConeRadiusAtTop)) {
-        return;
-    }
-
-    // Create cone geometry...
-    const coneGeometry = new THREE.ConeGeometry(visualConeRadiusAtTop, visualConeHeight, 32);
-    coneGeometry.translate(0, -visualConeHeight/2, 0);
-
-    const coneMaterial = new THREE.MeshBasicMaterial({
-        color: 0x00ffff,
-        transparent: true,
-        opacity: 0.1,
-        side: THREE.DoubleSide
-    });
-    
-    this.coverageCone = new THREE.Mesh(coneGeometry, coneMaterial);
-    this.coverageCone.position.copy(this.mesh.position);
-    const upVector = this.mesh.position.clone().normalize();
-    this.coverageCone.quaternion.setFromUnitVectors(new THREE.Vector3(0, -1, 0), upVector);
-    earthGroup.add(this.coverageCone);
-    }
-
-    /**
-     * Disposes of the ground station's meshes and lines to free up memory.
-     */
-    dispose() {
-        // Remove the station mesh
-        if (this.mesh) {
-            earthGroup.remove(this.mesh);
-            this.mesh.geometry.dispose();
-            this.mesh.material.dispose();
-            this.mesh = null;
-        }
-
-        // Remove the coverage cone
+        // Remove existing cone if it exists to avoid duplicates/memory leaks
         if (this.coverageCone) {
             earthGroup.remove(this.coverageCone);
             this.coverageCone.geometry.dispose();
@@ -1209,19 +952,80 @@ class GroundStation {
             this.coverageCone = null;
         }
 
-        // Remove the CSS2DObject label
-        if (this.labelObject) {
-            this.mesh?.remove(this.labelObject);
-            this.labelObject = null;
-        }
+        const minElevRad = this.minElevationAngle * DEG2RAD;
+        if (minElevRad <= 0) return;
+        if (minElevRad >= Math.PI / 2) return;
+        const GsConeHalfAngle = Math.PI / 2 - minElevRad;
 
-        // Remove its <div> from the DOM
-        if (this._labelElement) {
-            this._labelElement.remove();
-            this._labelElement = null;
-        }
+        const visualConeHeight = 0.2; // Made it smaller for better visual integration with small GS sphere
+
+        // Calculate the radius at the top of the cone based on the half angle and height
+        const visualConeRadiusAtTop = Math.tan(GsConeHalfAngle) * visualConeHeight;
+
+        // Basic validation for cone dimensions
+        if (visualConeHeight <= 0 || visualConeRadiusAtTop <= 0) return;
+
+        // Create a cone geometry.
+        // By default, THREE.ConeGeometry creates a cone with its base centered at (0,0,0) and its apex at (0, height, 0).
+        const coneGeometry = new THREE.ConeGeometry(visualConeRadiusAtTop, visualConeHeight, 32);
+
+        // Translate the cone so that its apex is at the ground station's position.
+        // It moves apex to (0,0,0) if original apex was at (0, height, 0) by translating -height/2.
+        coneGeometry.translate(0, visualConeHeight / 2, 0);
+
+        // Define the material for the cone
+        const coneMaterial = new THREE.MeshBasicMaterial({
+            color: 0x00ffff, // Cyan color
+            transparent: true,
+            opacity: 0.1, // Semi-transparent
+            side: THREE.DoubleSide // Render both sides of the cone faces
+        });
+        this.coverageCone = new THREE.Mesh(coneGeometry, coneMaterial);
+
+        // Position the cone's apex at the ground station's mesh position
+        this.coverageCone.position.copy(this.mesh.position);
+        // Orient the cone to point away from the Earth's center
+        // The mesh position is (X_3JS, Y_3JS, Z_3JS) where Y_3JS is ECEF Z (North pole up)
+        const upVector = this.mesh.position.clone().normalize();
+        this.coverageCone.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), upVector);
+        earthGroup.add(this.coverageCone);
     }
+
+    /**
+     * Disposes of the ground station's meshes and lines to free up memory.
+     */
+    dispose() {
+    // 1) Remove the station mesh
+    if (this.mesh) {
+      earthGroup.remove(this.mesh);
+      this.mesh.geometry.dispose();
+      this.mesh.material.dispose();
+      this.mesh = null;
+    }
+
+    // 2) Remove the coverage cone
+    if (this.coverageCone) {
+      earthGroup.remove(this.coverageCone);
+      this.coverageCone.geometry.dispose();
+      this.coverageCone.material.dispose();
+      this.coverageCone = null;
+    }
+
+    // 3) Remove the CSS2DObject label
+    if (this.labelObject) {
+      this.mesh?.remove(this.labelObject);  // in case you kept a reference
+      this.labelObject = null;
+    }
+
+    // 4) Remove its <div> from the DOM
+    if (this._labelElement) {
+      this._labelElement.remove();
+      this._labelElement = null;
+    }
+  }
 }
+
+
 
 /**
  * Loads the global satellite GLB model.
@@ -1239,6 +1043,7 @@ function loadGlobalGLBModel() {
 
     return new Promise((resolve, reject) => {
         gltfLoader.load(
+            //To do 
             '/Satellitemodel/CALIPSO.glb', // Path to the GLB model
             (gltf) => {
                 globalSatelliteGLB = gltf.scene;
@@ -1272,12 +1077,13 @@ function loadGlobalGLBModel() {
 init3DScene();// Initialize the 3D scene
 
 // Set initial Earth rotation offset based on the current epoch at script load
-earthRotationManager.initialize(window.currentEpochUTC);
+window.initialEarthRotationOffset = getGMST(new Date(window.currentEpochUTC));
 
 updateSunDirection(window.totalSimulatedTime);
 renderer.render(scene, camera);
 
 loadGlobalGLBModel().catch(() => console.warn("GLB model failed to load, proceeding with sphere models."));
+
 
 // Window functions for simulation control
 window.clearSimulationScene = function() {
@@ -1300,7 +1106,7 @@ window.clearSimulationScene = function() {
     if(cloudsMesh) cloudsMesh.rotation.y = 0; // Reset clouds differential rotation
     
     // IMPORTANT: Recalculate initial Earth rotation offset for the current epoch after clearing
-     earthRotationManager.initialize(window.currentEpochUTC);
+    window.initialEarthRotationOffset = getGMST(new Date(window.currentEpochUTC));
 
     // Update sun direction to current epoch at 0 simulated time after clearing
     updateSunDirection(0);
@@ -1405,116 +1211,68 @@ window.addOrUpdateSatelliteInScene = function(satelliteData) {
     window.dispatchEvent(new Event('epochUpdated'));
     }
 };
-// Function to add or update a ground station in the scene
-// This function will handle both adding new ground stations and updating existing ones
-window.addOrUpdateGroundStationInScene = function(groundStationData) {
-    const uniqueId = groundStationData.id || groundStationData.name;
+
+
+window.addOrUpdateGroundStationInScene = function(gsData) {
+    const uniqueId = gsData.id || gsData.name;
     if (!uniqueId) {
         console.error("Ground station data missing unique ID or name.");
         return;
     }
 
-    // Check if ground station already exists
     let existingGs = window.activeGroundStations.get(uniqueId);
-    
     if (existingGs) {
-        // Update existing ground station
-        console.log(`Updating existing ground station: ${uniqueId}`);
-        
-        // Remove the old one
-        existingGs.dispose();
-        window.activeGroundStations.delete(uniqueId);
-    }
-
-    // Create new ground station
-    const newGs = new GroundStation(
-        uniqueId,
-        groundStationData.name || uniqueId,
-        groundStationData.latitude,
-        groundStationData.longitude,
-        groundStationData.minElevationAngle || 5 // Default 5 degrees if not provided
-    );
-
-    // Add to active ground stations
-    window.activeGroundStations.set(newGs.id, newGs);
-    
-    console.log(`Ground station added: ${newGs.name} at (${newGs.latitude}°, ${newGs.longitude}°)`);
-
-    // Create label for the ground station if it doesn't exist
-    if (!newGs._labelElement) {
-        createGroundStationLabel(newGs);
-    }
-
-    // If this is the only object in the scene, focus camera on it
-    if (window.activeSatellites.size === 0 && window.activeGroundStations.size === 1) {
-        const gsPosition = newGs.mesh.position;
-        camera.position.set(
-            gsPosition.x * 2, 
-            gsPosition.y * 2, 
-            gsPosition.z * 2 + 1
+        // If updating an existing one, dispose and recreate to ensure mesh/cone updates correctly
+        existingGs.name = gsData.name;
+        existingGs.latitude = gsData.latitude;
+        existingGs.longitude = gsData.longitude;
+        existingGs.minElevationAngle = gsData.minElevationAngle;
+        existingGs.dispose(); // Dispose old meshes and label
+        existingGs.createMesh(); // Create new meshes and label with updated properties
+    } else {
+        const newGs = new GroundStation(
+            uniqueId,
+            gsData.name,
+            gsData.latitude,
+            gsData.longitude,
+            gsData.minElevationAngle
         );
-        controls.target.copy(gsPosition);
-        controls.update();
+        window.activeGroundStations.set(newGs.id, newGs);
     }
 
-    // Update UI if function exists
-    if (typeof window.updateAnimationDisplay === 'function') {
-        window.updateAnimationDisplay();
+    if (window.is2DViewActive && window.texturesLoaded) {
+    // fire your redraw listener:
+    window.dispatchEvent(new Event('epochUpdated'));
     }
-
-    // Render the scene to show the new ground station
-    renderer.render(scene, camera);
 };
 
-// Also add this helper function for debugging
-window.listActiveGroundStations = function() {
-    console.log("Active Ground Stations:");
-    window.activeGroundStations.forEach((gs, id) => {
-        console.log(`- ${id}: ${gs.name} at (${gs.latitude}°, ${gs.longitude}°)`);
-    });
-    return window.activeGroundStations;
-};
 
-// And this function to check ground station visibility
-window.checkGroundStationVisibility = function() {
-    window.activeGroundStations.forEach(gs => {
-        console.log(`Ground Station ${gs.name}:`);
-        console.log(`- Position: (${gs.mesh.position.x.toFixed(3)}, ${gs.mesh.position.y.toFixed(3)}, ${gs.mesh.position.z.toFixed(3)})`);
-        console.log(`- Visible: ${gs.mesh.visible}`);
-        console.log(`- In earthGroup: ${earthGroup.children.includes(gs.mesh)}`);
-        if (gs.coverageCone) {
-            console.log(`- Coverage cone visible: ${gs.coverageCone.visible}`);
-        }
-    });
-};
 
 // Data Passed From New Constellation Satellite Form
 window.viewSimulation = function(data) {
     // --- 1) Clear scene & reset epoch ---
-    window.clearSimulationScene();
+    window.clearSimulationScene();//Clear the simulation called it in add it to addOrUpdateSatelliteInScene
 
-    // ENHANCED: Handle TLE epoch synchronization
     if (data.tleLine1 && data.tleLine2) {
         try {
             const parsedTle = parseTle(data.tleLine1, data.tleLine2);
-            window.currentEpochUTC = parsedTle.epochTimestamp;
+            window.currentEpochUTC    = parsedTle.epochTimestamp;
             window.totalSimulatedTime = 0;
-            console.log(`Synchronized simulation epoch to TLE epoch: ${new Date(parsedTle.epochTimestamp).toUTCString()}`);
         } catch (err) {
-            console.error("Invalid TLE, falling back to current time:", err);
-            window.currentEpochUTC = Date.now();
+            console.error("Invalid TLE, falling back to now:", err);
+            window.currentEpochUTC    = Date.now();
             window.totalSimulatedTime = 0;
         }
     } else if (typeof data.utcTimestamp === 'number') {
-        window.currentEpochUTC = data.utcTimestamp;
+        window.currentEpochUTC    = data.utcTimestamp;
         window.totalSimulatedTime = 0;
     } else {
-        window.currentEpochUTC = Date.now();
+        window.currentEpochUTC    = Date.now();
         window.totalSimulatedTime = 0;
     }
 
     // recalc Earth rotation, sun, initial render
-    earthRotationManager.initialize(window.currentEpochUTC);
+    window.initialEarthRotationOffset = getGMST(new Date(window.currentEpochUTC));
     updateSunDirection(window.totalSimulatedTime);
     renderer.render(scene, camera);
 
@@ -1751,6 +1509,7 @@ window.removeObjectFromScene = function(idToRemove, type) {
     }
 };
 
+
 /**
  * Function to get the core 3D simulation objects for external access.
  * @returns {object} An object containing references to key 3D scene elements and state.
@@ -1765,7 +1524,7 @@ window.getSimulationCoreObjects = function() {
         activeSatellites: window.activeSatellites,
         activeGroundStations: window.activeGroundStations,
         isAnimating: window.isAnimating,
-        is2DViewActive:  window.is2DViewActive,
+        is2DViewActive:  window.is2DViewActive,    // ← add this
         currentSpeedMultiplier: window.currentSpeedMultiplier,
         totalSimulatedTime: window.totalSimulatedTime,
         selectedSatelliteId: window.selectedSatelliteId,
@@ -1783,10 +1542,12 @@ window.getSimulationCoreObjects = function() {
     };
 };
 
+
 /**
  * Function to load the 3D simulation state from serialized data.
  * It re-creates satellites and ground stations based on existing active data.
  */
+
 //Reload the 3D simulation state from sidebar or saved state
 window.load3DSimulationState = function() {
     const satellitesToRecreate = new Map(window.activeSatellites);
@@ -1801,7 +1562,7 @@ window.load3DSimulationState = function() {
             inclination: satData.tleLine1 ? undefined : satData.params.inclinationRad * (180 / Math.PI),
             eccentricity: satData.tleLine1 ? undefined : satData.params.eccentricity,
             raan: satData.tleLine1 ? undefined : satData.initialRAAN * (180 / Math.PI),
-            trueAnomaly: satData.tleLine1 ? undefined : E_to_TrueAnomaly(solveKepler(satData.initialMeanAnomaly, satData.params.eccentricity), satData.params.eccentricity) * (180 / Math.PI),
+            trueAnomaly: satData.tleLine1 ? undefined : E_to_TrueAnomaly(solveKepler(satData.initialMeanAnomaly, satData.params.eccentricity), satData.eccentricity) * (180 / Math.PI),
             
             utcTimestamp: satData.initialEpochUTC, // Always re-apply the original epoch
             beamwidth: satData.params.beamwidth, // Corrected to beamwidth
@@ -1831,13 +1592,15 @@ window.load3DSimulationState = function() {
     }
 };
 
+
+
 // Utility functions for satellite data calculations Display
 // Convert radians → formatted degrees
 function toDeg(rad) {
   return (rad * 180/Math.PI).toFixed(2);
 }
 
-// Compute a satellite's altitude (in km) from its scene‐unit radius
+// Compute a satellite’s altitude (in km) from its scene‐unit radius
 function computeAltitude(sat) {
   // EarthRadius (imported) is km per scene‐unit
   const kmPerUnit = EarthRadius;
@@ -1847,6 +1610,7 @@ function computeAltitude(sat) {
 // If you still need these globally (e.g. your Blade inline code), expose them:
 window.toDeg = toDeg;
 window.computeAltitude = computeAltitude;
+
 
 function updateSatellitePopup() {
     if (!window.activeSatellitePopup) return;
@@ -1877,51 +1641,6 @@ function updateSatellitePopup() {
 }
 window.updateSatellitePopup = updateSatellitePopup;
 
-// Add constellation generation support for link budget
-window.generateConstellationFromLinkBudget = function(linkBudgetData) {
-    const constellationName = `${linkBudgetData.name}_Constellation`;
-    
-    // Create a standard 'constellation' data object from the link budget results.
-    // This allows us to reuse the existing and robust constellation creation logic.
-    const constellationParams = {
-        fileName: constellationName,
-        fileType: 'constellation',
-        constellationType: 'walker', // Link budget defaults to a Walker constellation
-        
-        // --- Orbital parameters derived from the link budget ---
-        altitude: linkBudgetData.altitude,
-        inclination: linkBudgetData.inclination,
-        beamwidth: linkBudgetData.beamwidth,
-        eccentricity: 0, // Assume circular orbits for optimal coverage
-        raan: 0,         // Base RAAN; will be spread across planes
-        argumentOfPerigee: 0,
-        trueAnomaly: 0,
-        
-        // --- Walker constellation parameters from the link budget ---
-        numPlanes: linkBudgetData.numOrbitalPlanes,
-        satellitesPerPlane: linkBudgetData.satsPerPlane,
-        raanSpread: 360, // Spread planes evenly around the Earth
-        phasingFactor: 1, // Standard phasing for Walker Delta patterns
-        
-        // --- Timing and metadata ---
-        epoch: new Date().toISOString().slice(0, 16),
-        utcTimestamp: Date.now(),
-        satellites: [] // This will be populated by viewSimulation
-    };
-    
-    // Now, call the main simulation function with the newly created constellation data.
-    window.viewSimulation(constellationParams);
-    
-    // Save this new constellation object to local storage so it persists
-    window.fileOutputs.set(constellationName, constellationParams);
-    window.addFileToResourceSidebar(constellationName, constellationParams, 'constellation');
-    if (window.saveFilesToLocalStorage) {
-        window.saveFilesToLocalStorage();
-    }
-
-    showCustomAlert(`Generated and visualized '${constellationName}' from link budget analysis.`);
-};
-
 // Initialize the 3D scene and start the animation loop
 function animate() { // timestamp is passed by requestAnimationFrame
     requestAnimationFrame(animate);
@@ -1947,13 +1666,14 @@ function animate() { // timestamp is passed by requestAnimationFrame
     }
 
     // Earth's rotation angle includes the initial offset to align with GMST at epoch
-    const earthRotationAngle = earthRotationManager.getRotationAngle(core3D.totalSimulatedTime);
-    earthGroup.rotation.y = earthRotationAngle;
+    const earthRotationAngle = core3D.totalSimulatedTime * EARTH_ANGULAR_VELOCITY_RAD_PER_SEC;
+    earthGroup.rotation.y = earthRotationAngle + window.initialEarthRotationOffset;
 
     // --- update sun & shader time uniform ---
     updateSunDirection(core3D.totalSimulatedTime);
     earthMesh.material.uniforms.uTime.value = core3D.totalSimulatedTime;
     
+
     // --- render 3D every frame ---
     renderer.render(scene, camera);
 
@@ -1972,10 +1692,14 @@ function animate() { // timestamp is passed by requestAnimationFrame
     if (typeof window.updateAnimationDisplay === 'function') {
         window.updateAnimationDisplay();
     }
+    // if (core3D.selectedSatelliteId && typeof window.updateSatelliteDataDisplay === 'function') {
+    //     window.updateSatelliteDataDisplay();
+    // }
 
     updateGsSatLinkLines();// For Connection Analysis
 
-    // Camera/controls logic for close view
+
+  // Camera/controls logic for close view
     if (core3D.closeViewEnabled && core3D.selectedSatelliteId) {
         const selectedSat = core3D.activeSatellites.get(core3D.selectedSatelliteId);
         if (selectedSat) {
@@ -2055,6 +1779,7 @@ window.addEventListener('resize', () => {
         const newWidth = earthContainer.offsetWidth;
         const newHeight = earthContainer.offsetHeight;
         renderer.setSize(newWidth, newHeight);
+        // …and in your resize listener:
         labelRenderer.setSize(newWidth, newHeight);
         camera.aspect = newWidth / newHeight;
         camera.updateProjectionMatrix();
