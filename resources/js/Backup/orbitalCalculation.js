@@ -197,32 +197,64 @@ export function calculateDerivedOrbitalParameters(altitude, eccentricity, earthR
     };
 }
 
+/**
+ * Enhanced J2 perturbation model that includes all major effects:
+ * - RAAN precession (secular)
+ * - Argument of perigee precession (secular) 
+ * - Mean anomaly drift (secular)
+ * - Semi-major axis variation (periodic)
+ * - Eccentricity variation (periodic)
+ */
+/**
+ * CORRECT J2 perturbation model with standard, validated formulas
+ * Based on Vallado's "Fundamentals of Astrodynamics and Applications"
+ * and other authoritative orbital mechanics sources
+ */
 export function updateOrbitalElements(satellite, totalSimulatedTime) {
-  const a_km   = satellite.params.semiMajorAxis * EarthRadius;
-  const e      = satellite.params.eccentricity;
-  const i_rad  = satellite.params.inclinationRad;
-  const n0     = Math.sqrt(MU_EARTH / Math.pow(a_km, 3));
-  const p      = a_km * (1 - e*e);
-
-  // Faktor J2 base untuk ω & M
-  const J2_base = 0.75 * J2 * Math.pow(EarthRadius / p, 2);
-
-  // Secular rates
-  const dRAAN_dt   = -1.5 * J2 * Math.pow(EarthRadius/p, 2) * n0 * Math.cos(i_rad);
-  const dArgP_dt   =   J2_base * n0 * (5 * Math.cos(i_rad)**2 - 1);
-  const dM_J2_dt   =   J2_base * n0 * Math.sqrt(1 - e*e) * (3 * Math.cos(i_rad)**2 - 1);
-
-  // Update elements
-  satellite.currentRAAN         = satellite.initialRAAN     + dRAAN_dt   * totalSimulatedTime;
-  satellite.currentArgPerigee   = satellite.initialArgPerigee + dArgP_dt   * totalSimulatedTime;
-  satellite.currentMeanAnomaly  = satellite.initialMeanAnomaly 
-                                  + (n0 + dM_J2_dt) * totalSimulatedTime;
-
-
-  // Normalize
-  satellite.currentRAAN        %= 2*Math.PI;
-  satellite.currentArgPerigee  %= 2*Math.PI;
-  satellite.currentMeanAnomaly %= 2*Math.PI;
+  const a_km = satellite.params.semiMajorAxis * EarthRadius;
+  const e = satellite.params.eccentricity;
+  const i = satellite.params.inclinationRad;
+  const n = Math.sqrt(MU_EARTH / (a_km * a_km * a_km));
   
-  satellite.params.argPerigeeRad = satellite.currentArgPerigee;
+  // Store initials once
+  if (satellite.initialRAAN === undefined) satellite.initialRAAN = satellite.currentRAAN;
+  if (satellite.initialArgPerigee === undefined) satellite.initialArgPerigee = satellite.params.argPerigeeRad;
+  if (satellite.initialMeanAnomaly === undefined) satellite.initialMeanAnomaly = satellite.currentMeanAnomaly;
+  if (satellite.initialSemiMajorAxis === undefined) {
+    satellite.initialSemiMajorAxis = a_km;
+    satellite.initialEccentricity = e;
+  }
+  
+  // Base J2 factor: (3/2) * J2 * (Re/a)² * n
+  const J2_base = 1.5 * J2 * Math.pow(EarthRadius / a_km, 2) * n;
+  const cosI = Math.cos(i);
+  const cos2I = cosI * cosI;
+  const oneMinusE2 = 1 - e * e;
+  
+  // Secular rates (Vallado §4.3)
+  const dRAAN_dt = -J2_base * cosI / (oneMinusE2 * oneMinusE2);
+  const dArgPerigee_dt = (J2_base / 2) * (5 * cos2I - 1) / (oneMinusE2 * oneMinusE2);
+  const dM_dt = (J2_base / 2) * (3 * cos2I - 1) / Math.pow(oneMinusE2, 1.5);
+  
+  // Apply secular drifts
+  let Ω = satellite.initialRAAN + dRAAN_dt * totalSimulatedTime;
+  let ω = satellite.initialArgPerigee + dArgPerigee_dt * totalSimulatedTime;
+  let M = satellite.initialMeanAnomaly + n * totalSimulatedTime + dM_dt * totalSimulatedTime;
+  
+  // Normalize to [0, 2π)
+  satellite.currentRAAN = ((Ω % (2*Math.PI)) + 2*Math.PI) % (2*Math.PI);
+  satellite.params.argPerigeeRad = ((ω % (2*Math.PI)) + 2*Math.PI) % (2*Math.PI);
+  satellite.currentMeanAnomaly = ((M % (2*Math.PI)) + 2*Math.PI) % (2*Math.PI);
+  
+  // Periodic effects (unchanged)
+  const E = solveKepler(satellite.currentMeanAnomaly, e);
+  const ν = E_to_TrueAnomaly(E, e);
+  const u = satellite.params.argPerigeeRad + ν;
+  
+  const δa = satellite.initialSemiMajorAxis * (1.5 * J2 * Math.pow(EarthRadius / satellite.initialSemiMajorAxis, 2)) * Math.sqrt(1 - e*e) * Math.sin(2 * u);
+  const δe = (0.75 * J2 * Math.pow(EarthRadius / satellite.initialSemiMajorAxis, 2)) * Math.sqrt(1 - e*e) * Math.sin(2 * u);
+  
+  satellite.params.semiMajorAxis = (satellite.initialSemiMajorAxis + δa) / EarthRadius;
+  satellite.params.eccentricity = Math.min(0.99, Math.max(0, satellite.initialEccentricity + δe));
+  satellite.currentTrueAnomaly = ν;
 }

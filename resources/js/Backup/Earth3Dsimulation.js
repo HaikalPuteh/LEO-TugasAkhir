@@ -517,20 +517,11 @@ function updateCoverageCone(sat) {
   const R = SCENE_EARTH_RADIUS;
   const P = sat.mesh.position.clone();
   const d = P.length();
-  
-  // ===================== SOLUTION =====================
-  // Add this check to ensure the satellite is above the Earth's surface.
-  // This prevents Math.acos(R / d) from becoming NaN if d < R.
-  if (d <= R) {
-    return; // Satellite is inside or on the surface, no coverage cone is possible.
-  }
-  // ====================================================
-
   const β = THREE.MathUtils.degToRad(beamDeg / 2);
 
   // —— law of sines φ = arcsin((d/R)·sinβ) – β, clamped by horizon ——  
   let φ = Math.asin(Math.min(1, (d / R) * Math.sin(β))) - β;
-  const φ_horizon = Math.acos(R / d); // This is now safe from NaN
+  const φ_horizon = Math.acos(R / d);
   if (φ < 0 || φ > φ_horizon) {
     // either beam too narrow or aims past horizon → no coverage
     if (β < φ_horizon) return;
@@ -691,6 +682,11 @@ THREE.MathUtils.acosSafe = function(x) {
   return Math.acos(THREE.MathUtils.clamp(x, -1, 1));
 };
 
+// Helper to clamp dot into [-1,1] before acos
+THREE.MathUtils.acosSafe = function(x) {
+  return Math.acos(THREE.MathUtils.clamp(x, -1, 1));
+};
+
 // Satellite class definition
 class Satellite {
     constructor(id, name, params, initialMeanAnomaly, initialRAAN, initialEpochUTC, tleLine1 = null, tleLine2 = null) {
@@ -704,8 +700,6 @@ class Satellite {
         this.currentMeanAnomaly = initialMeanAnomaly;
         this.currentRAAN = initialRAAN;
         this.initialRAAN = initialRAAN;
-        this.initialArgPerigee = this.params.argPerigeeRad;
-        this.currentArgPerigee = this.params.argPerigeeRad;
 
         // New properties for latitude and longitude
         this.latitudeDeg = 0;
@@ -733,8 +727,6 @@ class Satellite {
             if (epochOffsetSeconds !== 0) {
                 updateOrbitalElements(this, epochOffsetSeconds);
                 this.initialMeanAnomaly = this.currentMeanAnomaly;
-                this.initialRAAN = this.currentRAAN;
-                this.initialArgPerigee = this.currentArgPerigee;
             }
         }
 
@@ -809,7 +801,7 @@ class Satellite {
 
             const E = solveKepler(this.currentMeanAnomaly, this.params.eccentricity);
             this.currentTrueAnomaly = E_to_TrueAnomaly(E, this.params.eccentricity);
-        
+
             const { x, y, z } = calculateSatellitePositionECI(
                 this.params,
                 this.currentMeanAnomaly,
@@ -839,6 +831,7 @@ class Satellite {
         // Convert current ECI position to latitude and longitude for ground track (2D)
         // 1) Compute the total rotation (initial GMST + elapsed spin)
          const θ = earthRotationManager.peekRotationAngle(window.totalSimulatedTime);
+
         // 2) "Undo" it in one go (ECI→ECEF)
         const ecef = this.mesh.position.clone().applyAxisAngle(new THREE.Vector3(0,1,0), -θ);
 
@@ -1747,7 +1740,10 @@ window.viewSimulation = function(data) {
         window.totalSimulatedTime = 0;
     }
 
- 
+    // recalc Earth rotation, sun, initial render
+    earthRotationManager.initialize(window.currentEpochUTC);
+    updateSunDirection(window.totalSimulatedTime);
+    renderer.render(scene, camera);
 
     // --- 2) Single/TLE branch ---
     if (data.fileType === 'single' || data.fileType === 'tle') {
@@ -1772,10 +1768,6 @@ window.viewSimulation = function(data) {
         window.fileOutputs.set(data.fileName, data);
         if (window.saveFilesToLocalStorage) window.saveFilesToLocalStorage();
         window.updateOutputTabForFile(data.fileName, data.fileType);
-        // recalculate  Earth rotation, sun, initial render
-        earthRotationManager.initialize(window.currentEpochUTC);
-        updateSunDirection(window.totalSimulatedTime);
-        renderer.render(scene, camera);
 
     // --- 3) Constellation / LinkBudget branch ---
     } else if (data.fileType === 'constellation' || data.fileType === 'linkBudget') {
@@ -1911,9 +1903,6 @@ window.viewSimulation = function(data) {
         window.fileOutputs.set(data.fileName, params);
         if (window.saveFilesToLocalStorage) window.saveFilesToLocalStorage();
         window.updateOutputTabForFile(data.fileName, data.fileType);
-        earthRotationManager.initialize(window.currentEpochUTC);
-        updateSunDirection(window.totalSimulatedTime);
-        renderer.render(scene, camera);
 
     // --- 4) Ground station branch ---
     } else if (data.fileType === 'groundStation') {

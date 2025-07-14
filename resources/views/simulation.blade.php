@@ -140,23 +140,66 @@
             color:rgb(59, 132, 228); 
         }
 
+        /* Output Tab Styles - matching Resource Tab */
+        #output-menu {
+            padding: 0;
+        }
+
+        #output-menu h6 {
+            padding: 10px 15px;
+            margin: 0;
+            background-color: #f5f5f5;
+            border-bottom: 1px solid #ddd;
+            font-weight: 600;
+            color: #333;
+        }
+
+        #reports-section, #satellite-link-section {
+            margin-bottom: 0;
+        }
+
         #output-menu ul {
             list-style: none;
-            padding-left: 0.5rem;
+            padding-left: 0;
+            margin: 0;
             color: rgb(0, 0, 0);
         }
 
         #output-menu ul li {
-            list-style: none;
-            font-weight: normal;
+            padding: 8px 15px;
             cursor: pointer;
-            color: rgb(0, 0, 0);
+            border-bottom: 1px solid #eee;
+            transition: background-color 0.2s;
         }
 
         #output-menu ul li:hover {
             background-color: #e9ecef;
         }
 
+        #output-menu ul ul {
+            padding-left: 2rem;
+            background-color: #fafafa;
+        }
+
+        #output-menu ul ul li {
+            padding: 6px 15px;
+            font-size: 0.95em;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        #create-link-report-btn {
+            margin: 10px 15px;
+            width: calc(100% - 30px);
+        }
+
+        /* Icon spacing in Output tab */
+        #output-menu .sidebar-icon {
+            width: 16px;
+            text-align: center;
+            margin-right: 6px;
+            color: rgb(59, 132, 228);
+            display: inline-block;
+        }
         #earth-container {
             width: 100%;
             height: 100%;
@@ -990,14 +1033,13 @@
                     </li>
                 </ul>
             </div>
-
             <div id="output-menu" class="menu-content hidden flex-grow-1">
                 <div id="reports-section">
-                    <h6 class="text-dark">Reports</h6>
+                    <h6>Reports</h6>
                     <ul id="reports-list"></ul>
                 </div>
                 <div id="satellite-link-section">
-                    <h6 class="text-dark">Satellite Link</h6>
+                    <h6>Satellite Link</h6>
                     <button id="create-link-report-btn" class="btn btn-sm btn-primary">Create Link Report</button>
                     <ul id="link-reports-list"></ul>
                 </div>
@@ -1275,42 +1317,51 @@
         }
 
         function deleteFile(fileName, fileType) {
-        if (fileType === 'single') {
-            removeSatelliteFromScene(fileName);
-            fileOutputs.delete(fileName);
+            if (fileType === 'single') {
+                removeSatelliteFromScene(fileName);
+                fileOutputs.delete(fileName);
 
-        } else if (fileType === 'constellation') {
-            const data = fileOutputs.get(fileName) || {};
-            // 1) dispose every sat mesh/orbit/label, etc.
-            (data.satellites || []).forEach(satId => removeSatelliteFromScene(satId));
-            // 2) now just remove the _one_ constellation entry
-            fileOutputs.delete(fileName);
-        } else if (fileType === 'groundStation') {
-            removeGroundStationFromScene(fileName);
-            // remove the 3D object …
-            window.activeGroundStations.delete(fileName);
-            // … and remove the data so the name is truly gone
-            groundStations.delete(fileName);
+            } else if (fileType === 'constellation') {
+                const data = fileOutputs.get(fileName) || {};
+                (data.satellites || []).forEach(satId => removeSatelliteFromScene(satId));
+                fileOutputs.delete(fileName);
+                
+            } else if (fileType === 'groundStation') {
+                removeGroundStationFromScene(fileName);
+                window.activeGroundStations.delete(fileName);
+                groundStations.delete(fileName);
 
-        } else if (fileType === 'linkBudget') {
-            linkBudgetAnalysis.delete(fileName);
-        }
+            } else if (fileType === 'linkBudget') {
+                // Find and remove associated constellation
+                const constellationName = `${fileName}_Constellation`;
+                const constellationData = fileOutputs.get(constellationName);
+                
+                if (constellationData) {
+                    // Remove all satellites from the constellation
+                    (constellationData.satellites || []).forEach(satId => removeSatelliteFromScene(satId));
+                    fileOutputs.delete(constellationName);
+                    
+                    // Remove constellation from resource sidebar
+                    const constellationItem = document.querySelector(`li[data-file-name="${constellationName}"][data-file-type="constellation"]`);
+                    if (constellationItem) constellationItem.remove();
+                }
+                
+                linkBudgetAnalysis.delete(fileName);
+            }
 
-        saveFilesToLocalStorage();
-        populateResourceTab();
-        populateReportsList();
+            saveFilesToLocalStorage();
+            populateResourceTab();
+            populateReportsList();
         }
 
 
         function populateReportsList() {
             const reportsList = document.getElementById('reports-list');
-            reportsList.innerHTML = ''; // Pastikan daftar dibersihkan setiap kali
+            reportsList.innerHTML = '';
 
-            // Gunakan Set untuk melacak nama entri utama yang sudah ditambahkan
             const addedMainEntries = new Set();
 
-            // 1) Bagian untuk Single Files
-            // Kumpulkan semua satelit tunggal terlebih dahulu
+            // 1) Single Files Section
             const singleSatellites = [];
             fileOutputs.forEach((data, fileName) => {
                 if (data.fileType === 'single') {
@@ -1320,99 +1371,102 @@
 
             if (singleSatellites.length > 0) {
                 const singleFilesLi = document.createElement('li');
-                singleFilesLi.textContent = 'Single Files: ';
-                const names = singleSatellites.map(s => s.fileName).join(', ');
-                singleFilesLi.textContent += names;
-
-                // Event listener untuk "Single Files: [nama]" di OUTPUT
-                singleFilesLi.addEventListener('click', function() {
-                    if (singleSatellites.length > 0) {
-                        const firstSatData = singleSatellites[0].data;
-                        if (window.viewSimulation) {
-                            // Ini akan menambahkan satelit ke scene, tidak menghapus yang lain
-                            window.viewSimulation(firstSatData);
-                        }
-                        showSatellitePopup(firstSatData.fileName); // Tampilkan popup untuk satelit pertama
-                    }
+                singleFilesLi.innerHTML = '<i class="fas fa-satellite sidebar-icon"></i>Single Files';
+                
+                const singleSubList = document.createElement('ul');
+                singleSatellites.forEach(s => {
+                    const satLi = document.createElement('li');
+                    satLi.textContent = s.fileName;
+                    satLi.style.cursor = 'pointer';
+                    satLi.addEventListener('click', function(e) {
+                        e.stopPropagation(); // Prevent event bubbling
+                        showSatellitePopup(s.fileName);
+                    });
+                    singleSubList.appendChild(satLi);
                 });
+                
+                singleFilesLi.appendChild(singleSubList);
                 reportsList.appendChild(singleFilesLi);
             }
 
+            // 2) Constellation Files Section
+            fileOutputs.forEach((data, fileName) => {
+                if (data.fileType === 'constellation') {
+                    const constellationLi = document.createElement('li');
+                    constellationLi.innerHTML = `<i class="fas fa-network-wired sidebar-icon"></i>Constellation: ${fileName}`;
+                    constellationLi.dataset.fileName = fileName;
+                    constellationLi.dataset.fileType = data.fileType;
 
-        fileOutputs.forEach((data, fileName) => {
-            if (data.fileType === 'constellation') {
-                const constellationLi = document.createElement('li');
-                constellationLi.textContent = `Constellation Files: ${fileName}`;
-                constellationLi.dataset.fileName = fileName;
-                constellationLi.dataset.fileType = data.fileType;
+                    // Don't add click handler to the constellation itself to avoid conflicts
 
-                // Event listener untuk "Constellation Files: [nama]" di OUTPUT
-                constellationLi.addEventListener('click', function() {
-                     if (window.viewSimulation) {
-                         // Ini akan menambahkan satelit konstelasi ke scene, tidak menghapus yang lain
-                         window.viewSimulation(data);
-                     }
-                     // Opsional: Tampilkan popup khusus konstelasi jika ada
-                });
-
-                const subSatUl = document.createElement('ul');
-                (data.satellites || []).forEach(satId => {
-                    const sat = window.activeSatellites.get(satId);
-                    if (sat) {
-                        const satLi = document.createElement('li');
-                        satLi.textContent = `- ${sat.name}`;
-                        satLi.dataset.id = satId;
-                        satLi.dataset.type = 'single';
-                        satLi.addEventListener('click', () => showSatellitePopup(satId)); // Listener untuk satelit individu di dalam konstelasi
-                        subSatUl.appendChild(satLi);
+                    const subSatUl = document.createElement('ul');
+                    (data.satellites || []).forEach(satId => {
+                        const sat = window.activeSatellites.get(satId);
+                        if (sat) {
+                            const satLi = document.createElement('li');
+                            satLi.textContent = sat.name;
+                            satLi.style.cursor = 'pointer';
+                            satLi.dataset.id = satId;
+                            satLi.dataset.type = 'single';
+                            
+                            // Fix: Use closure to capture satId correctly and prevent event bubbling
+                            satLi.addEventListener('click', (function(capturedSatId) {
+                                return function(e) {
+                                    e.stopPropagation(); // Prevent event bubbling
+                                    showSatellitePopup(capturedSatId);
+                                };
+                            })(satId));
+                            
+                            subSatUl.appendChild(satLi);
+                        }
+                    });
+                    
+                    if (subSatUl.children.length > 0) {
+                        constellationLi.appendChild(subSatUl);
                     }
-                });
-                if (subSatUl.children.length > 0) {
-                    constellationLi.appendChild(subSatUl);
+                    reportsList.appendChild(constellationLi);
                 }
-                reportsList.appendChild(constellationLi);
-            }
-        });
+            });
 
-            // 3) Bagian untuk Ground Stations
+            // 3) Ground Stations Section
             groundStations.forEach((data, name) => {
                 const groundStationLi = document.createElement('li');
-                groundStationLi.textContent = `Ground Station: ${name}`;
+                groundStationLi.innerHTML = `<i class="fas fa-satellite-dish sidebar-icon"></i>Ground Station: ${name}`;
+                groundStationLi.style.cursor = 'pointer';
                 groundStationLi.dataset.id = name;
                 groundStationLi.dataset.type = 'groundStation';
-                // Event listener untuk "Ground Station: [nama]" di OUTPUT
-                groundStationLi.addEventListener('click', function() {
-                    if (window.addOrUpdateGroundStationInScene) {
-                        // Ini akan menambahkan ground station ke scene, tidak menghapus yang lain
-                        window.addOrUpdateGroundStationInScene(data);
-                    }
-                    showGroundStationPopup(name); // Tampilkan popup informasi ground station
+                
+                groundStationLi.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    showGroundStationPopup(name);
                 });
                 reportsList.appendChild(groundStationLi);
             });
 
-            // 4) Bagian untuk Link Budget
+            // 4) Link Budget Section
             linkBudgetAnalysis.forEach((data, name) => {
                 const linkBudgetLi = document.createElement('li');
-                linkBudgetLi.textContent = `Link Budget: ${name}`;
+                linkBudgetLi.innerHTML = `<i class="fas fa-tower-broadcast sidebar-icon"></i>Link Budget: ${name}`;
+                linkBudgetLi.style.cursor = 'pointer';
                 linkBudgetLi.dataset.id = name;
                 linkBudgetLi.dataset.type = 'linkBudget';
-                // Event listener untuk "Link Budget: [nama]" di OUTPUT
-                linkBudgetLi.addEventListener('click', function() {
-                    showLinkBudgetOutput(data); // Menampilkan output link budget di modal
+                
+                linkBudgetLi.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    showLinkBudgetOutput(data);
                 });
                 reportsList.appendChild(linkBudgetLi);
             });
         }
 
-        // function to convert radians to degrees
-        function toRad(deg) { return (deg * Math.PI / 180).toFixed(2); }
-      // function to convert radians to degrees
-        function toDeg(rad) { return (rad * 180/Math.PI).toFixed(2); }
-        function computeAltitude(sat) {
-        // mirror your original calculation:
-        const kmPerUnit = EarthRadius;
-        return ((sat.mesh.position.length() * kmPerUnit) - kmPerUnit).toFixed(2);
+            // function to convert radians to degrees
+            function toRad(deg) { return (deg * Math.PI / 180).toFixed(2); }
+            // function to convert radians to degrees
+            function toDeg(rad) { return (rad * 180/Math.PI).toFixed(2); }
+            function computeAltitude(sat) {
+            // mirror your original calculation:
+            const kmPerUnit = EarthRadius;
+            return ((sat.mesh.position.length() * kmPerUnit) - kmPerUnit).toFixed(2);
         }   
 
 // ---------------- showSatellitePopup ----------------
