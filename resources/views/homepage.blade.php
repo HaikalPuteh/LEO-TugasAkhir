@@ -423,6 +423,24 @@
             text-align: justify;
         }
 
+        /* New button style for "selengkapnya" */
+        .website .button.read-more {
+            background-color: var(--primary-blue); /* Example background color */
+            color: var(--light-text);
+            border: 2px solid var(--primary-blue);
+            padding: 12px 30px;
+            font-size: 1em;
+            font-weight: 600;
+            text-decoration: none;
+            border-radius: var(--border-radius);
+            transition: background-color var(--transition-speed), transform var(--transition-speed);
+        }
+
+        .website .button.read-more:hover {
+            background-color: #0056b3; /* Darker shade on hover */
+            transform: translateY(-2px);
+        }
+
         /* Footer Styling */
         footer {
             background: var(--dark-bg);
@@ -857,6 +875,7 @@
                 mengedukasi publik tentang cara kerja satelit ini. Pengguna dapat dengan mudah mengatur berbagai
                 parameter orbit, seperti ketinggian satelit, untuk mengamati secara langsung bagaimana perubahan
                 tersebut memengaruhi pergerakan satelit dan pancaran (coverage) yang dihasilkannya. </p>
+            <a href="<?php echo url('/selengkapnya'); ?>" class="button read-more" target="_blank">Selengkapnya</a>
         </div>
     </section>
 

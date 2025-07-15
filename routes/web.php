@@ -13,3 +13,7 @@ Route::get('/simulation', function () {
 Route::get('/dummy', function () {
     return view('dummy');
 });
+
+Route::get('/selengkapnya', function () {
+    return view('selengkapnya');
+});
