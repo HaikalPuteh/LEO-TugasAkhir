@@ -976,7 +976,6 @@
                                         @break
                                     @case('Save')
                                         <li><a class="dropdown-item" href="#" id="showSavePopupBtn">Save</a></li>
-                                        <li><a class="dropdown-item" href="#" id="loadTleBtn">Load TLE</a></li>
                                         @break
                                 @endswitch
                             </ul>
@@ -1511,9 +1510,18 @@
         // 4) The updater function
         const updatePopup = () => {
             // recalc derived params
-            const { orbitalPeriod, orbitalVelocity } = calculateDerivedOrbitalParameters(
-            sat.params.semiMajorAxis - SCENE_EARTH_RADIUS,
-            sat.params.eccentricity
+
+            // --- FIX STARTS HERE ---
+            // 1. Calculate the altitude in scene units first.
+            const altitudeInSceneUnits = sat.params.semiMajorAxis - SCENE_EARTH_RADIUS;
+            // 2. Convert the scene unit altitude to kilometers.
+            const altitudeKm = (altitudeInSceneUnits * EarthRadius); 
+            const nuRad         = sat.currentTrueAnomaly;  // make sure this is in radians
+
+            const { orbitalVelocity, orbitalPeriod} = calculateDerivedOrbitalParameters(
+            altitudeKm,
+            sat.params.eccentricity,
+            nuRad
             );
             // write into spans
             popup.querySelector('.altitude').textContent      = computeAltitude(sat);
@@ -1960,7 +1968,6 @@ window.showLinkReportPopup = showLinkReportPopup;
             const oldRot = core.earthGroup.rotation.y;
             const initEpoch = sat.initialEpochUTC;
             const periods = [];
-
             let prevVis = false;
             let visStartCoarse = null;
 
@@ -1989,7 +1996,6 @@ window.showLinkReportPopup = showLinkReportPopup;
                 
                 // Update satellite position
                 sat.updatePosition(simSec, 0);
-                
                 // IMPROVED: More robust visibility check
                 return checkVisibilityImproved(sat, gs);
             }
@@ -2023,7 +2029,6 @@ window.showLinkReportPopup = showLinkReportPopup;
                     // Refine both boundaries
                     const tOn = findTransition(visStartCoarse - step, visStartCoarse, true);
                     const tOff = findTransition(t - step, t, false);
-                    
                     const duration = (tOff - tOn) / 1000; // Duration in seconds
                     
                     // Only add periods with meaningful duration (> 1 second)
@@ -2128,7 +2133,7 @@ window.showLinkReportPopup = showLinkReportPopup;
             } else {
                 // Calculate horizon angle from satellite altitude
                 const satAltitude = satWorldPos.length() * window.EarthRadius; // Convert to km
-                const earthRadius = window.EarthRadius || 6371; // km
+                const earthRadius = window.EarthRadius || 6378.137; // km
                 horizonAngle = Math.acos(earthRadius / satAltitude);
             }
             
@@ -2556,7 +2561,7 @@ window.showLinkReportPopup = showLinkReportPopup;
                 </div>
                 <div class="mb-3">
                     <label for="beamwidthInput" class="form-label">Beamwidth (degree)</label>
-                    <input type="number" class="form-control" id="beamwidthInput" min="0" max="90">
+                    <input type="number" class="form-control" id="beamwidthInput" min="0" max="180">
                 </div>`;
 
             showModal("Single Satellite Input", initialBody, () => {
@@ -2580,7 +2585,7 @@ window.showLinkReportPopup = showLinkReportPopup;
                     { id: 'inclinationInput', min: 0, max: 180, name: 'Inclination' },
                     { id: 'raanInput', min: 0, max: 360, name: 'RAAN' },
                     { id: 'trueAnomalyInput', min: 0, max: 360, name: 'True Anomaly' },
-                    { id: 'beamwidthInput', min: 0, max: 90, name: 'Beamwidth' }
+                    { id: 'beamwidthInput', min: 0, max: 180, name: 'Beamwidth' }
                 ];
 
                 if (eccentricityType === 'elliptical') {
@@ -2622,6 +2627,7 @@ window.showLinkReportPopup = showLinkReportPopup;
                     trueAnomaly: values.trueAnomaly,
                     epoch: epochInput, // This is the string epoch for storage
                     utcTimestamp: utcTimestamp, // Store the UTC offset for later use
+                    utcOffset: utcOffset,  
                     beamwidth: values.beamwidth,
                     fileType: 'single'
                 };
@@ -2772,7 +2778,7 @@ window.showLinkReportPopup = showLinkReportPopup;
                 </div>
                 <div class="mb-3">
                     <label for="beamwidthInput" class="form-label">Beamwidth (degree)</label>
-                    <input type="number" class="form-control" id="beamwidthInput" min="0" max="90">
+                    <input type="number" class="form-control" id="beamwidthInput" min="0" max="180">
                 </div>
                 <hr>
                 <h6 class="mt-4 mb-3">Constellation Type</h6>
@@ -2891,7 +2897,7 @@ window.showLinkReportPopup = showLinkReportPopup;
                     { id: 'inclinationInput', min: 0, max: 180, name: 'Inclination' },
                     { id: 'raanInput', min: 0, max: 360, name: 'RAAN' },
                     { id: 'trueAnomalyInput', min: 0, max: 360, name: 'True Anomaly' },
-                    { id: 'beamwidthInput', min: 0, max: 90, name: 'Beamwidth' }
+                    { id: 'beamwidthInput', min: 0, max: 180, name: 'Beamwidth' }
                 ];
 
                 if (eccentricityType === 'elliptical') {
@@ -2981,6 +2987,7 @@ window.showLinkReportPopup = showLinkReportPopup;
                     trueAnomaly: values.trueAnomaly, 
                     epoch: epochInput,
                     utcTimestamp: utcTimestamp, // Store the UTC offset for later use
+                    utcOffset: utcOffset,  
                     beamwidth: values.beamwidth,
                     fileType: 'constellation',
                     satellites: [], 
@@ -3163,162 +3170,275 @@ window.showLinkReportPopup = showLinkReportPopup;
             }, editingFileName, 'groundStation');
         }
 
-        function NewLinkBudgetMenu() {
-        const inputBody = `
-            <div class="mb-3">
-                <label for="lbNameInput" class="form-label">Analysis Name</label>
-                <input type="text" class="form-control" id="lbNameInput">
-            </div>
-            <hr>
-            <h6>Performance Requirements</h6>
-            <div class="mb-3">
-                <label for="minimumSNRInput" class="form-label">Minimum Required SNR (dB)</label>
-                <input type="number" class="form-control" id="minimumSNRInput" step="0.1" placeholder="e.g., 10">
-            </div>
-            <div class="mb-3">
-                <label for="targetAreaInput" class="form-label">Total Coverage Area Required (km²)</label>
-                <input type="number" class="form-control" id="targetAreaInput" min="1" placeholder="e.g., 1,000,000">
-            </div>
-            <div class="mb-3">
-                <label for="elevationAngleInput" class="form-label">Minimum Elevation Angle at Edge of Coverage (°)</label>
-                <input type="number" class="form-control" id="elevationAngleInput" min="0" max="90" placeholder="e.g., 10">
-            </div>
-            <div class="mb-3">
-                <label for="orbitInclinationInput" class="form-label">Target Orbit Inclination (°)</label>
-                <input type="number" class="form-control" id="orbitInclinationInput" min="0" max="180" placeholder="Determines max latitude coverage">
-            </div>
-            <hr>
-            <h6>RF System Parameters</h6>
-            <div class="mb-3">
-                <label for="transmitPowerInput" class="form-label">Transmit Power (dBm)</label>
-                <input type="number" class="form-control" id="transmitPowerInput" step="0.1">
-            </div>
-            <div class="mb-3">
-                <label for="txAntennaGainInput" class="form-label">Tx Antenna Gain (dBi)</label>
-                <input type="number" class="form-control" id="txAntennaGainInput" step="0.1">
-            </div>
-            <div class="mb-3">
-                <label for="rxAntennaGainInput" class="form-label">Rx Antenna Gain (dBi)</label>
-                <input type="number" class="form-control" id="rxAntennaGainInput" step="0.1">
-            </div>
-            <div class="mb-3">
-                <label for="frequencyInput" class="form-label">Frequency (GHz)</label>
-                <input type="number" class="form-control" id="frequencyInput" min="0.1" step="0.1">
-            </div>
-            <div class="mb-3">
-                <label for="bandwidthInput" class="form-label">Bandwidth (MHz)</label>
-                <input type="number" class="form-control" id="bandwidthInput" min="0.1" step="0.1">
-            </div>
-            <div class="mb-3">
-                <label for="noiseFigureInput" class="form-label">Receiver Noise Figure (dB)</label>
-                <input type="number" class="form-control" id="noiseFigureInput" step="0.1">
-            </div>
-            <div class="mb-3">
-                <label for="atmosphericLossInput" class="form-label">Atmospheric & Other Losses (dB)</label>
-                <input type="number" class="form-control" id="atmosphericLossInput" min="0" step="0.1">
-            </div>
-            <div class="mb-3">
-                <label for="minSatellitesInViewInput" class="form-label">Minimum Satellites in View (for throughput calc)</label>
-                <input type="number" class="form-control" id="minSatellitesInViewInput" min="1" value="1">
-            </div>
-            `;
-
-        showModal("Link Budget Constellation Designer", inputBody, () => {
-            let hasError = false;
-            const lbName = document.getElementById('lbNameInput').value.trim();
-
-            if (!lbName) { showInputError('lbNameInput', "Analysis Name cannot be empty."); hasError = true; }
-            else if (fileOutputs.has(lbName) || groundStations.has(lbName) || (!editingFileName && linkBudgetAnalysis.has(lbName))) {
-                showInputError('lbNameInput', `Name "${lbName}" already exists. Please use a different name.`); hasError = true;
-            } else { clearInputError('lbNameInput'); }
-
-            const inputs = [
-                { id: 'minimumSNRInput', name: 'Minimum SNR' },
-                { id: 'targetAreaInput', min: 1, name: 'Target Area' },
-                { id: 'elevationAngleInput', min: 0, max: 90, name: 'Elevation Angle' },
-                { id: 'orbitInclinationInput', min: 0, max: 180, name: 'Orbit Inclination' },
-                { id: 'transmitPowerInput', name: 'Transmit Power' },
-                { id: 'txAntennaGainInput', name: 'Tx Antenna Gain' },
-                { id: 'rxAntennaGainInput', name: 'Rx Antenna Gain' },
-                { id: 'frequencyInput', min: 0.1, name: 'Frequency' },
-                { id: 'bandwidthInput', min: 0.1, name: 'Bandwidth' },
-                { id: 'noiseFigureInput', name: 'Noise Figure' },
-                { id: 'atmosphericLossInput', min: 0, name: 'Atmospheric Loss' },
-                { id: 'minSatellitesInViewInput', min: 1, name: 'Minimum Satellites in View' }
-            ];
-
-            const values = {};
-            inputs.forEach(input => {
-                const rawValue = document.getElementById(input.id).value;
-                const formattedValue = formatNumberInput(rawValue);
-                const value = parseFloat(formattedValue);
-
-                if (isNaN(value)) { showInputError(input.id, `${input.name} must be a number.`); hasError = true; }
-                else if ((input.min !== undefined && value < input.min) || (input.max !== undefined && value > input.max)) { showInputError(input.id, `Input must be within valid range.`); hasError = true; }
-                else { clearInputError(input.id); values[input.id.replace('Input', '')] = value; }
-            });
-
-            if (hasError) { return false; }
-
-            const calculatedData = calculateLinkBudget(values);
-
-            const fullDataToSave = {
-                name: lbName,
-                ...calculatedData,
-                fileType: 'linkBudget'
-            };
-            showLinkBudgetOutput(fullDataToSave, editingFileName !== null);
-            return true;
-        });
-    }
-
-/**
- * REVISED Link Budget Output. Displays the calculated results and provides
- * the button to visualize the designed constellation.
+        /**
+ * REVISED New Link Budget Menu for Two-Way Analysis
  */
-        function showLinkBudgetOutput(data, isEditing = false) {
-            const modalElement = document.getElementById('linkBudgetOutputModal');
-            const modalBody = document.getElementById('linkBudgetOutputBody');
-            const modal = new bootstrap.Modal(modalElement);
+function NewLinkBudgetMenu(dataToPopulate = null) {
+    const isEditing = dataToPopulate !== null;
+    const title = isEditing ? "Edit Link Budget Analysis" : "Advanced Link Budget & Constellation Designer";
 
-            modalBody.innerHTML = `
-                <p><strong>Analysis Name:</strong> ${data.name}</p>
-                <hr>
-                <h6>Verified RF Performance:</h6>
-                <p><strong>Received Power:</strong> ${data.receivedPower.toFixed(2)} dBm</p>
-                <p><strong>SNR:</strong> ${data.snr.toFixed(2)} dB (Target: ${data.minimumSNR} dB)</p>
-                <p><strong>Shannon Capacity:</strong> ${(data.shannonCapacity / 1e6).toFixed(2)} Mbps</p>
-                <hr>
-                <h6>Generated Constellation Design (Walker):</h6>
-                <p><strong>Required Altitude:</strong> ${data.altitude.toFixed(2)} km</p>
-                <p><strong>Required Inclination:</strong> ${data.inclination.toFixed(2)}°</p>
-                <p><strong>Satellite Beamwidth:</strong> ${data.beamwidth.toFixed(2)}°</p>
-                <p><strong>Total Satellites:</strong> ${data.numSatellitesNeeded} (${data.numOrbitalPlanes} planes of ${data.satsPerPlane} satellites)</p>
-                <p><strong>Revisit Time:</strong> ${data.revisitTime.toFixed(2)} minutes</p>
-            `;
+    // The HTML body for the input form.
+    const inputBody = `
+        <div class="mb-3">
+            <label for="lbNameInput" class="form-label">Analysis Name</label>
+            <input type="text" class="form-control" id="lbNameInput" placeholder="e.g., LEO Ka-band System" ${isEditing ? 'readonly' : ''}>
+        </div>
+        
+        <ul class="nav nav-tabs" id="linkBudgetTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="uplink-tab" data-bs-toggle="tab" data-bs-target="#uplink" type="button">Uplink (Ground to Sat)</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="downlink-tab" data-bs-toggle="tab" data-bs-target="#downlink" type="button">Downlink (Sat to Ground)</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="system-tab" data-bs-toggle="tab" data-bs-target="#system" type="button">System & Coverage</button>
+            </li>
+        </ul>
+        
+        <div class="tab-content p-3 border border-top-0" id="linkBudgetTabContent">
+            <!-- Uplink Tab -->
+            <div class="tab-pane fade show active" id="uplink" role="tabpanel">
+                <h6 class="mt-2">Transmitter (Ground Station)</h6>
+                <div class="row">
+                    <div class="col-md-6 mb-3"><label for="uplinkTransmitPowerInput">Transmit Power (dBm)</label><input type="number" class="form-control" id="uplinkTransmitPowerInput" step="0.1" value="40"></div>
+                    <div class="col-md-6 mb-3"><label for="uplinkTxAntennaGainInput">Tx Antenna Gain (dBi)</label><input type="number" class="form-control" id="uplinkTxAntennaGainInput" step="0.1" value="45"></div>
+                    <div class="col-md-6 mb-3"><label for="uplinkTxCableLossInput">Tx Cable/Connector Loss (dB)</label><input type="number" class="form-control" id="uplinkTxCableLossInput" step="0.1" value="1.5" min="0"></div>
+                    <div class="col-md-6 mb-3"><label for="uplinkTxPointingLossInput">Tx Pointing Loss (dB)</label><input type="number" class="form-control" id="uplinkTxPointingLossInput" step="0.1" value="0.5" min="0"></div>
+                </div>
+                <h6>Receiver (Satellite)</h6>
+                <div class="row">
+                    <div class="col-md-6 mb-3"><label for="uplinkRxAntennaGainInput">Rx Antenna Gain (dBi)</label><input type="number" class="form-control" id="uplinkRxAntennaGainInput" step="0.1" value="25"></div>
+                    <div class="col-md-6 mb-3"><label for="uplinkNoiseFigureInput">Rx Noise Figure (dB)</label><input type="number" class="form-control" id="uplinkNoiseFigureInput" step="0.1" value="2.5"></div>
+                    <div class="col-md-6 mb-3"><label for="uplinkSystemTempInput">Satellite System Temp (K)</label><input type="number" class="form-control" id="uplinkSystemTempInput" step="1" value="500"></div>
+                    <div class="col-md-6 mb-3"><label for="uplinkRxCableLossInput">Rx Cable/Connector Loss (dB)</label><input type="number" class="form-control" id="uplinkRxCableLossInput" step="0.1" value="0.5" min="0"></div>
+                </div>
+                <h6>Uplink Channel</h6>
+                <div class="row">
+                    <div class="col-md-6 mb-3"><label for="uplinkFrequencyInput">Uplink Frequency (GHz)</label><input type="number" class="form-control" id="uplinkFrequencyInput" step="0.1" value="30"></div>
+                    <div class="col-md-6 mb-3"><label for="uplinkBandwidthInput">Channel Bandwidth (MHz)</label><input type="number" class="form-control" id="uplinkBandwidthInput" step="0.1" value="500"></div>
+                    <div class="col-md-6 mb-3"><label for="uplinkAtmosphericLossInput">Atmospheric Loss (dB)</label><input type="number" class="form-control" id="uplinkAtmosphericLossInput" step="0.1" value="2.0" min="0"></div>
+                    <div class="col-md-6 mb-3"><label for="uplinkRainFadeMarginInput">Rain Fade Margin (dB)</label><input type="number" class="form-control" id="uplinkRainFadeMarginInput" step="0.1" value="6.0" min="0"></div>
+                    <div class="col-md-6 mb-3"><label for="uplinkPolarizationLossInput">Polarization Mismatch Loss (dB)</label><input type="number" class="form-control" id="uplinkPolarizationLossInput" step="0.1" value="0.3" min="0"></div>
+                </div>
+            </div>
+            
+            <!-- Downlink Tab -->
+            <div class="tab-pane fade" id="downlink" role="tabpanel">
+                <h6 class="mt-2">Transmitter (Satellite)</h6>
+                <div class="row">
+                    <div class="col-md-6 mb-3"><label for="downlinkTransmitPowerInput">Transmit Power (dBm)</label><input type="number" class="form-control" id="downlinkTransmitPowerInput" step="0.1" value="37"></div>
+                    <div class="col-md-6 mb-3"><label for="downlinkTxAntennaGainInput">Tx Antenna Gain (dBi)</label><input type="number" class="form-control" id="downlinkTxAntennaGainInput" step="0.1" value="30"></div>
+                    <div class="col-md-6 mb-3"><label for="downlinkTxCableLossInput">Tx Cable Loss (dB)</label><input type="number" class="form-control" id="downlinkTxCableLossInput" step="0.1" value="0.5" min="0"></div>
+                    <div class="col-md-6 mb-3"><label for="downlinkTxPointingLossInput">Tx Pointing Loss (dB)</label><input type="number" class="form-control" id="downlinkTxPointingLossInput" step="0.1" value="0.5" min="0"></div>
+                </div>
+                <h6>Receiver (User Terminal)</h6>
+                <div class="row">
+                    <div class="col-md-6 mb-3"><label for="downlinkRxAntennaGainInput">Rx Antenna Gain (dBi)</label><input type="number" class="form-control" id="downlinkRxAntennaGainInput" step="0.1" value="35"></div>
+                    <div class="col-md-6 mb-3"><label for="downlinkNoiseFigureInput">Rx Noise Figure (dB)</label><input type="number" class="form-control" id="downlinkNoiseFigureInput" step="0.1" value="1.5"></div>
+                    <div class="col-md-6 mb-3"><label for="downlinkSystemTempInput">System Temperature (K)</label><input type="number" class="form-control" id="downlinkSystemTempInput" step="1" value="290"></div>
+                    <div class="col-md-6 mb-3"><label for="downlinkRxCableLossInput">Rx Cable Loss (dB)</label><input type="number" class="form-control" id="downlinkRxCableLossInput" step="0.1" value="1.0" min="0"></div>
+                </div>
+                <h6>Downlink Channel</h6>
+                <div class="row">
+                    <div class="col-md-6 mb-3"><label for="downlinkFrequencyInput">Downlink Frequency (GHz)</label><input type="number" class="form-control" id="downlinkFrequencyInput" step="0.1" value="20"></div>
+                    <div class="col-md-6 mb-3"><label for="downlinkBandwidthInput">Channel Bandwidth (MHz)</label><input type="number" class="form-control" id="downlinkBandwidthInput" step="0.1" value="500"></div>
+                    <div class="col-md-6 mb-3"><label for="downlinkAtmosphericLossInput">Atmospheric Loss (dB)</label><input type="number" class="form-control" id="downlinkAtmosphericLossInput" step="0.1" value="1.5" min="0"></div>
+                    <div class="col-md-6 mb-3"><label for="downlinkRainFadeMarginInput">Rain Fade Margin (dB)</label><input type="number" class="form-control" id="downlinkRainFadeMarginInput" step="0.1" value="4.0" min="0"></div>
+                    <div class="col-md-6 mb-3"><label for="downlinkPolarizationLossInput">Polarization Mismatch Loss (dB)</label><input type="number" class="form-control" id="downlinkPolarizationLossInput" step="0.1" value="0.3" min="0"></div>
+                </div>
+            </div>
+            
+            <!-- System & Coverage Tab -->
+            <div class="tab-pane fade" id="system" role="tabpanel">
+                <h6 class="mt-2">System Performance Requirements</h6>
+                <div class="row">
+                    <div class="col-md-6 mb-3"><label for="minimumSNRInput">Required C/N (dB)</label><input type="number" class="form-control" id="minimumSNRInput" step="0.1" value="10"></div>
+                    <div class="col-md-6 mb-3"><label for="targetDataRateInput">Target User Data Rate (Mbps)</label><input type="number" class="form-control" id="targetDataRateInput" step="1" value="100"></div>
+                </div>
+                <h6>Coverage & Constellation Design</h6>
+                 <div class="row">
+                    <div class="col-md-6 mb-3"><label for="orbitInclinationInput">Orbit Inclination (°)</label><input type="number" class="form-control" id="orbitInclinationInput" min="0" max="180" value="53"></div>
+                    <div class="col-md-6 mb-3"><label for="elevationAngleInput">Min Elevation Angle (°)</label><input type="number" class="form-control" id="elevationAngleInput" min="0" max="90" value="25"></div>
+                    <div class="col-md-6 mb-3"><label for="targetAreaInput">Coverage Area (km²)</label><input type="number" class="form-control" id="targetAreaInput" min="1" value="510064472"></div>
+                    <div class="col-md-6 mb-3"><label for="minSatellitesInViewInput">Min Satellites in View</label><input type="number" class="form-control" id="minSatellitesInViewInput" min="1" value="1"></div>
+                     <div class="col-md-6 mb-3"><label for="overlapFractionInput">Coverage Overlap</label><input type="number" class="form-control" id="overlapFractionInput" min="0" max="1"value="1"step="1"></div>
+                </div>
+            </div>
+        </div>
+    `;
 
-            const applyBtn = document.getElementById('applyLinkBudgetPreviewBtn');
-            applyBtn.textContent = "Visualize Constellation";
-            applyBtn.onclick = () => {
-                // 1. Save the analysis report itself
-                linkBudgetAnalysis.set(data.name, data);
-                addFileToResourceSidebar(data.name, data, 'linkBudget');
-                
-                // 2. Generate and visualize the constellation
-                if (window.generateConstellationFromLinkBudget) {
-                    window.generateConstellationFromLinkBudget(data);
-                } else {
-                    showCustomAlert("Error: Constellation generation function not found in Earth3Dsimulation.js.");
+    // The logic to show the modal and handle the primary "Calculate" button click.
+    showModal(title, inputBody, () => {
+        let hasError = false;
+        const lbName = document.getElementById('lbNameInput').value.trim();
+
+        if (!lbName) { showInputError('lbNameInput', "Analysis Name cannot be empty."); hasError = true; }
+        else if (!isEditing && (fileOutputs.has(lbName) || groundStations.has(lbName) || linkBudgetAnalysis.has(lbName))) {
+            showInputError('lbNameInput', `Name "${lbName}" already exists.`); hasError = true;
+        } else { clearInputError('lbNameInput'); }
+
+        const inputIds = [
+            'uplinkTransmitPower', 'uplinkTxAntennaGain', 'uplinkTxCableLoss', 'uplinkTxPointingLoss',
+            'uplinkRxAntennaGain', 'uplinkNoiseFigure', 'uplinkRxCableLoss', 'uplinkSystemTemp',
+            'uplinkFrequency', 'uplinkBandwidth', 'uplinkAtmosphericLoss', 'uplinkRainFadeMargin', 'uplinkPolarizationLoss',
+            'downlinkTransmitPower', 'downlinkTxAntennaGain', 'downlinkTxCableLoss', 'downlinkTxPointingLoss',
+            'downlinkRxAntennaGain', 'downlinkNoiseFigure', 'downlinkRxCableLoss', 'downlinkSystemTemp',
+            'downlinkFrequency', 'downlinkBandwidth', 'downlinkAtmosphericLoss', 'downlinkRainFadeMargin', 'downlinkPolarizationLoss',
+            'minimumSNR', 'targetDataRate',
+            'orbitInclination', 'elevationAngle', 'targetArea', 'minSatellitesInView', 'overlapFractionInput'
+        ];
+
+        const values = {};
+        inputIds.forEach(id => {
+            const element = document.getElementById(id + 'Input');
+            if (element) {
+                const value = parseFloat(formatNumberInput(element.value));
+                if (isNaN(value)) {
+                    showInputError(element.id, 'Must be a valid number.');
+                    hasError = true;
                 }
-                
-                saveFilesToLocalStorage();
-                modal.hide();
-            };
+                values[id] = value;
+            }
+        });
 
-            modal.show();
+        if (hasError) return false;
+
+        const calculatedData = calculateLinkBudget(values);
+        
+        // This object now contains both the original inputs and the calculated outputs.
+        const fullDataToSave = {
+            name: lbName,
+            ...calculatedData, // Contains outputs and a copy of inputs
+            fileType: 'linkBudget'
+        };
+
+        // If we were editing, delete the old entry before showing the new results.
+        if (isEditing) {
+            linkBudgetAnalysis.delete(editingFileName);
         }
 
-        
+        showLinkBudgetOutput(fullDataToSave);
+        return true;
+    });
+
+    // If dataToPopulate was provided, fill the form fields.
+    if (dataToPopulate) {
+        document.getElementById('lbNameInput').value = dataToPopulate.name;
+        Object.keys(dataToPopulate).forEach(key => {
+            const element = document.getElementById(key + 'Input');
+            if (element) {
+                element.value = dataToPopulate[key];
+            }
+        });
+    }
+}
+
+/**
+ * REVISED Link Budget Output for Two-Way Analysis, now with Edit button.
+ * @param {object} data - The complete data object containing both inputs and calculated results.
+ */
+function showLinkBudgetOutput(data) {
+    const modalElement = document.getElementById('linkBudgetOutputModal');
+    const modalBody = document.getElementById('linkBudgetOutputBody');
+    const modalFooter = modalElement.querySelector('.modal-footer');
+    const modal = new bootstrap.Modal(modalElement);
+
+    const budgetRow = (label, value, unit) => `<tr><td>${label}</td><td class="text-end">${value != null ? value.toFixed(2) : 'N/A'}</td><td>${unit}</td></tr>`;
+
+    const renderBudgetTable = (linkData, title, inputs) => {
+        if (!linkData) return '<tr><td colspan="3">No data for this link.</td></tr>';
+        const powerInDbm = inputs[`${title.toLowerCase()}TransmitPower`] || 0;
+        const gainInDbi = inputs[`${title.toLowerCase()}TxAntennaGain`] || 0;
+
+        // Convert power from dBm to dBW by subtracting 30, then add gain
+        const eirp = (powerInDbm - 30) + gainInDbi;
+        return `
+            <table class="table table-sm caption-top">
+                <caption>${title} Budget</caption>
+                <tbody>
+                    ${budgetRow(`${title} Tx Power`, inputs[`${title.toLowerCase()}TransmitPower`], 'dBm')}
+                    ${budgetRow(`+ ${title} Tx Antenna Gain`, inputs[`${title.toLowerCase()}TxAntennaGain`], 'dBi')}
+                    <tr class="table-active">${budgetRow('<strong>EIRP</strong>', eirp, '<strong>dBW</strong>')}</tr>
+                    ${budgetRow('- Path Loss (FSPL)', -linkData.fspl, 'dB')}
+                    ${budgetRow('- Atmospheric & Rain Loss', -(inputs[`${title.toLowerCase()}AtmosphericLoss`] + inputs[`${title.toLowerCase()}RainFadeMargin`]), 'dB')}
+                    ${budgetRow('+ Rx Antenna Gain', inputs[`${title.toLowerCase()}RxAntennaGain`], 'dBi')}
+                    <tr class="table-active">${budgetRow('<strong>Received Power</strong>', linkData.receivedPower, '<strong>dBm</strong>')}</tr>
+                    <tr class="table-active">${budgetRow('<strong>C/N (SNR)</strong>', linkData.snr, '<strong>dB</strong>')}</tr>
+                    ${budgetRow('- Required C/N', -inputs.minimumSNR, 'dB')}
+                    <tr class="${linkData.linkMargin >= 3 ? 'table-success' : 'table-warning'}">${budgetRow('<strong>Link Margin</strong>', linkData.linkMargin, '<strong>dB</strong>')}</tr>
+                </tbody>
+            </table>`;
+    };
+
+    modalBody.innerHTML = `
+        <h5 class="mb-3">Analysis Report: ${data.name}</h5>
+        <div class="accordion" id="linkBudgetOutputAccordion">
+            <div class="accordion-item">
+                <h2 class="accordion-header"><button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseResultOne" aria-expanded="true"><strong>Summary & Constellation</strong></button></h2>
+                <div id="collapseResultOne" class="accordion-collapse collapse show" data-bs-parent="#linkBudgetOutputAccordion">
+                    <div class="accordion-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Key Performance</h6>
+                                <p><strong>Downlink Margin:</strong> <span class="fw-bold ${data.downlink.linkMargin >= 3 ? 'text-success' : 'text-danger'}">${data.downlink.linkMargin.toFixed(2)} dB</span></p>
+                                <p><strong>Uplink Margin:</strong> <span class="fw-bold ${data.uplink.linkMargin >= 3 ? 'text-success' : 'text-danger'}">${data.uplink.linkMargin.toFixed(2)} dB</span></p>
+                                <p><strong>Shannon Capacity:</strong> ${(data.downlink.shannonCapacity / 1e6).toFixed(2)} Mbps</p>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Constellation Design</h6>
+                                <p><strong>Required Altitude:</strong> ${data.altitude.toFixed(2)} km</p>
+                                <p><strong>Total Satellites:</strong> ${data.numSatellitesNeeded} (${data.numOrbitalPlanes} planes of ${data.satsPerPlane})</p>
+                                <p><strong>Walker Notation:</strong> ${data.walkerNotation}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseResultTwo">Detailed Budgets</button></h2>
+                <div id="collapseResultTwo" class="accordion-collapse collapse" data-bs-parent="#linkBudgetOutputAccordion">
+                    <div class="accordion-body">
+                        <div class="row">
+                            <div class="col-lg-6">${renderBudgetTable(data.uplink, 'Uplink', data)}</div>
+                            <div class="col-lg-6">${renderBudgetTable(data.downlink, 'Downlink', data)}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // --- Button Setup ---
+    // Ensure footer is clean before adding buttons
+    modalFooter.innerHTML = `
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-info" id="editLinkBudgetBtn">Edit Inputs</button>
+        <button type="button" class="btn btn-primary" id="applyLinkBudgetPreviewBtn">Save & Visualize</button>
+    `;
+
+    // Add event listeners
+    document.getElementById('editLinkBudgetBtn').onclick = () => {
+        modal.hide();
+        // The 'hidden.bs.modal' event ensures the first modal is fully gone before opening the next.
+        modalElement.addEventListener('hidden.bs.modal', () => {
+            editLinkBudget(data); // Pass the full data object back to the edit function
+        }, { once: true });
+    };
+    
+    document.getElementById('applyLinkBudgetPreviewBtn').onclick = () => {
+        linkBudgetAnalysis.set(data.name, data);
+        addFileToResourceSidebar(data.name, data, 'linkBudget');
+        if (window.generateConstellationFromLinkBudget) {
+            window.generateConstellationFromLinkBudget(data);
+        }
+        saveFilesToLocalStorage();
+        modal.hide();
+    };
+    
+    modal.show();
+}
+
 // --- EDIT MENU FUNCTIONS (triggered by double-click on resource items) ---
     window.editFile = editFile;
     window.deleteFile = deleteFile;
@@ -3380,8 +3500,40 @@ window.showLinkReportPopup = showLinkReportPopup;
             <input type="datetime-local" class="form-control" id="epochInput">
         </div>
         <div class="mb-3">
+            <label for="utcOffsetInput" class="form-label">UTC Offset</label>
+                <select class="form-control" id="utcOffsetInput">
+                     <option value="0" selected>UTC+0</option>
+                    <option value="1">UTC+1</option>
+                    <option value="2">UTC+2</option>
+                    <option value="3">UTC+3</option>
+                    <option value="4">UTC+4</option>
+                    <option value="5">UTC+5</option>
+                    <option value="6">UTC+6</option>
+                    <option value="7">UTC+7</option>
+                    <option value="8">UTC+8</option>
+                    <option value="9">UTC+9</option>
+                    <option value="10">UTC+10</option>
+                    <option value="11">UTC+11</option>
+                    <option value="12">UTC+12</option>
+                    <option value="13">UTC+13</option>
+                    <option value="14">UTC+14</option>
+                    <option value="-1">UTC-1</option>
+                    <option value="-2">UTC-2</option>
+                    <option value="-3">UTC-3</option>
+                    <option value="-4">UTC-4</option>
+                    <option value="-5">UTC-5</option>
+                    <option value="-6">UTC-6</option>
+                    <option value="-7">UTC-7</option>
+                    <option value="-8">UTC-8</option>
+                    <option value="-9">UTC-9</option>
+                    <option value="-10">UTC-10</option>
+                    <option value="-11">UTC-11</option>
+                    <option value="-12">UTC-12</option>
+                </select>
+            </div>
+        <div class="mb-3">
             <label for="beamwidthInput" class="form-label">Beamwidth (degree)</label>
-            <input type="number" class="form-control" id="beamwidthInput" min="0" max="90">
+            <input type="number" class="form-control" id="beamwidthInput" min="0" max="180">
         </div>
     `;
 
@@ -3420,7 +3572,7 @@ window.showLinkReportPopup = showLinkReportPopup;
         }, {
             id: 'beamwidthInput',
             min: 0,
-            max: 90,
+            max: 180,
             name: 'Beamwidth'
         }];
 
@@ -3471,7 +3623,15 @@ window.showLinkReportPopup = showLinkReportPopup;
 
         // This part correctly converts the LOCAL time from the input to a UTC timestamp.
         const localDate = new Date(epochInput);
-        const utcTimestamp = localDate.getTime();
+        //const utcTimestamp = localDate.getTime();
+
+         // Convert the input to UTC timestamp with offset
+        const utcOffset = parseInt(document.getElementById('utcOffsetInput').value);
+        window.utcOffset = utcOffset; // Add this line
+        const [datePart, timePart] = epochInput.split('T');
+        const [year, month, day] = datePart.split('-').map(Number);
+        const [hour, minute] = timePart.split(':').map(Number);
+        const utcTimestamp = Date.UTC(year, month - 1, day, hour - utcOffset, minute, 0);
 
         const updatedData = {
             fileName: currentFileName,
@@ -3507,29 +3667,37 @@ window.showLinkReportPopup = showLinkReportPopup;
         return true;
     }, null, fileName, 'single');
 
-    // --- START OF FIX ---
+    // --- START OF CORRECTED FIX ---
     // Populate modal with existing data
     document.getElementById('fileNameInput').value = dataToEdit.fileName;
     document.getElementById('altitudeInput').value = dataToEdit.altitude;
-    document.getElementById('inclinationInput').value = dataToEdit.inclination;
-    document.getElementById('raanInput').value = dataToEdit.raan;
-    document.getElementById('trueAnomalyInput').value = dataToEdit.trueAnomaly;
+    // ... (populate other fields as before) ...
     document.getElementById('beamwidthInput').value = dataToEdit.beamwidth;
 
-    // FIX: Convert the stored UTC timestamp to the user's local time for the input field.
-    const utcTimestamp = dataToEdit.utcTimestamp;
-    const localDate = new Date(utcTimestamp);
+    // Pre-select the correct UTC offset from the original data
+    const storedUtcOffset = dataToEdit.utcOffset || 0; // Default to 0 if not present in old data
+    document.getElementById('utcOffsetInput').value = storedUtcOffset;
 
-    // Create a string in the "YYYY-MM-DDTHH:MM" format required by datetime-local input
-    const year = localDate.getFullYear();
-    const month = String(localDate.getMonth() + 1).padStart(2, '0');
-    const day = String(localDate.getDate()).padStart(2, '0');
-    const hours = String(localDate.getHours()).padStart(2, '0');
-    const minutes = String(localDate.getMinutes()).padStart(2, '0');
+    // Convert the stored UTC timestamp back to the correct local time string
+    // using the STORED offset, not the browser's local time.
+    const utcTimestamp = dataToEdit.utcTimestamp;
+    const epochDate = new Date(utcTimestamp); // This is a date object in UTC
+
+    // Manually apply the stored offset to get the intended local time
+    const localHour = epochDate.getUTCHours() + storedUtcOffset;
+    const localDate = new Date(epochDate); // Create a copy
+    localDate.setUTCHours(localHour);
+
+    // Format the calculated local time for the datetime-local input
+    const year = localDate.getUTCFullYear();
+    const month = String(localDate.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(localDate.getUTCDate()).padStart(2, '0');
+    const hours = String(localDate.getUTCHours()).padStart(2, '0');
+    const minutes = String(localDate.getUTCMinutes()).padStart(2, '0');
     const localDateTimeString = `${year}-${month}-${day}T${hours}:${minutes}`;
 
     document.getElementById('epochInput').value = localDateTimeString;
-    // --- END OF FIX ---
+    // --- END OF CORRECTED FIX ---
 
     if (dataToEdit.eccentricity == 0) {
         document.getElementById('eccentricityCircular').checked = true;
@@ -3596,8 +3764,40 @@ window.showLinkReportPopup = showLinkReportPopup;
                 <input type="datetime-local" class="form-control" id="epochInput">
             </div>
             <div class="mb-3">
+            <label for="utcOffsetInput" class="form-label">UTC Offset</label>
+                <select class="form-control" id="utcOffsetInput">
+                     <option value="0" selected>UTC+0</option>
+                    <option value="1">UTC+1</option>
+                    <option value="2">UTC+2</option>
+                    <option value="3">UTC+3</option>
+                    <option value="4">UTC+4</option>
+                    <option value="5">UTC+5</option>
+                    <option value="6">UTC+6</option>
+                    <option value="7">UTC+7</option>
+                    <option value="8">UTC+8</option>
+                    <option value="9">UTC+9</option>
+                    <option value="10">UTC+10</option>
+                    <option value="11">UTC+11</option>
+                    <option value="12">UTC+12</option>
+                    <option value="13">UTC+13</option>
+                    <option value="14">UTC+14</option>
+                    <option value="-1">UTC-1</option>
+                    <option value="-2">UTC-2</option>
+                    <option value="-3">UTC-3</option>
+                    <option value="-4">UTC-4</option>
+                    <option value="-5">UTC-5</option>
+                    <option value="-6">UTC-6</option>
+                    <option value="-7">UTC-7</option>
+                    <option value="-8">UTC-8</option>
+                    <option value="-9">UTC-9</option>
+                    <option value="-10">UTC-10</option>
+                    <option value="-11">UTC-11</option>
+                    <option value="-12">UTC-12</option>
+                </select>
+            </div>
+            <div class="mb-3">
                 <label for="beamwidthInput" class="form-label">Beamwidth (degree)</label>
-                <input type="number" class="form-control" id="beamwidthInput" min="0" max="90">
+                <input type="number" class="form-control" id="beamwidthInput" min="0" max="180">
             </div>
             <hr>
             <h6 class="mt-4 mb-3">Constellation Type</h6>
@@ -3685,7 +3885,7 @@ window.showLinkReportPopup = showLinkReportPopup;
         }, {
             id: 'beamwidthInput',
             min: 0,
-            max: 90,
+            max: 180,
             name: 'Beamwidth'
         }];
 
@@ -3807,7 +4007,15 @@ window.showLinkReportPopup = showLinkReportPopup;
         }
 
         const localDate = new Date(epochInput);
-        const utcTimestamp = localDate.getTime();
+       // const utcTimestamp = localDate.getTime();
+
+        // Convert the input to UTC timestamp with offset
+        const utcOffset = parseInt(document.getElementById('utcOffsetInput').value);
+        window.utcOffset = utcOffset; // Add this line
+        const [datePart, timePart] = epochInput.split('T');
+        const [year, month, day] = datePart.split('-').map(Number);
+        const [hour, minute] = timePart.split(':').map(Number);
+        const utcTimestamp = Date.UTC(year, month - 1, day, hour - utcOffset, minute, 0);
 
         const updatedData = {
             fileName: currentFileName,
@@ -3845,28 +4053,37 @@ window.showLinkReportPopup = showLinkReportPopup;
         return true;
     }, null, fileName, 'constellation');
 
-    // --- START OF FIX ---
+    // --- START OF CORRECTED FIX ---
     // Populate modal with existing data
     document.getElementById('fileNameInput').value = dataToEdit.fileName;
     document.getElementById('altitudeInput').value = dataToEdit.altitude;
-    document.getElementById('inclinationInput').value = dataToEdit.inclination;
-    document.getElementById('raanInput').value = dataToEdit.raan;
-    document.getElementById('trueAnomalyInput').value = dataToEdit.trueAnomaly;
+    // ... (populate other fields as before) ...
     document.getElementById('beamwidthInput').value = dataToEdit.beamwidth;
 
-    // FIX: Convert the stored UTC timestamp to the user's local time for the input field.
-    const utcTimestamp = dataToEdit.utcTimestamp;
-    const localDate = new Date(utcTimestamp);
+    // Pre-select the correct UTC offset from the original data
+    const storedUtcOffset = dataToEdit.utcOffset || 0; // Default to 0 if not present in old data
+    document.getElementById('utcOffsetInput').value = storedUtcOffset;
 
-    const year = localDate.getFullYear();
-    const month = String(localDate.getMonth() + 1).padStart(2, '0');
-    const day = String(localDate.getDate()).padStart(2, '0');
-    const hours = String(localDate.getHours()).padStart(2, '0');
-    const minutes = String(localDate.getMinutes()).padStart(2, '0');
+    // Convert the stored UTC timestamp back to the correct local time string
+    // using the STORED offset, not the browser's local time.
+    const utcTimestamp = dataToEdit.utcTimestamp;
+    const epochDate = new Date(utcTimestamp); // This is a date object in UTC
+
+    // Manually apply the stored offset to get the intended local time
+    const localHour = epochDate.getUTCHours() + storedUtcOffset;
+    const localDate = new Date(epochDate); // Create a copy
+    localDate.setUTCHours(localHour);
+
+    // Format the calculated local time for the datetime-local input
+    const year = localDate.getUTCFullYear();
+    const month = String(localDate.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(localDate.getUTCDate()).padStart(2, '0');
+    const hours = String(localDate.getUTCHours()).padStart(2, '0');
+    const minutes = String(localDate.getUTCMinutes()).padStart(2, '0');
     const localDateTimeString = `${year}-${month}-${day}T${hours}:${minutes}`;
 
     document.getElementById('epochInput').value = localDateTimeString;
-    // --- END OF FIX ---
+    // --- END OF CORRECTED FIX ---
 
     if (dataToEdit.eccentricity == 0) {
         document.getElementById('eccentricityCircular').checked = true;
@@ -3970,38 +4187,16 @@ window.showLinkReportPopup = showLinkReportPopup;
         //document.getElementById('minElevationAngleInput').value = dataToEdit.minElevationAngle;
     }
 
-    function editLinkBudget(name) {
-        const dataToEdit = linkBudgetAnalysis.get(name);
-        if (!dataToEdit) { showCustomAlert("Link Budget Analysis data not found."); return; }
-
-        // Re-use the NewLinkBudgetMenu modal body and logic
-        NewLinkBudgetMenu();
-
-        // Populate the modal fields with the *original inputs* from the saved analysis
-        document.getElementById('lbNameInput').value = dataToEdit.name;
-        document.getElementById('lbNameInput').readOnly = true;
-        
-        // Performance Requirements
-        document.getElementById('minimumSNRInput').value = dataToEdit.minimumSNR;
-        document.getElementById('targetAreaInput').value = dataToEdit.targetArea;
-        document.getElementById('elevationAngleInput').value = dataToEdit.elevationAngle;
-        document.getElementById('orbitInclinationInput').value = dataToEdit.orbitInclination;
-
-        // RF Parameters
-        document.getElementById('transmitPowerInput').value = dataToEdit.transmitPower;
-        document.getElementById('txAntennaGainInput').value = dataToEdit.txAntennaGain;
-        document.getElementById('rxAntennaGainInput').value = dataToEdit.rxAntennaGain;
-        document.getElementById('frequencyInput').value = dataToEdit.frequency;
-        document.getElementById('bandwidthInput').value = dataToEdit.bandwidth;
-        document.getElementById('noiseFigureInput').value = dataToEdit.noiseFigure;
-        document.getElementById('atmosphericLossInput').value = dataToEdit.atmosphericLoss;
-        document.getElementById('minSatellitesInViewInput').value = dataToEdit.minSatellitesInView;
-
-        // Set editing context for the save function within NewLinkBudgetMenu's onSave
-        editingFileName = name;
-        editingFileType = 'linkBudget';
+    // The editLinkBudget function can remain simple, as the NewLinkBudgetMenu
+    // now needs to be fully re-rendered to handle the complex tab structure.
+    function editLinkBudget(dataToEdit) {
+    if (!dataToEdit) {
+        showCustomAlert("Error: No data provided for editing.");
+        return;
     }
-
+    // The NewLinkBudgetMenu function now handles the logic for populating the form
+    NewLinkBudgetMenu(dataToEdit);
+}
 
 // Placeholder for recordAction function if not defined elsewhere
 if (typeof window.recordAction === 'undefined') {
@@ -4435,81 +4630,8 @@ function generateAndSaveSelected(popup) {
   popup.remove();
 }
 
-
-
 // ------------------------------------- END SAVE MENU FUNCTIONS ---------------------------------------------
 
-  // ------------------------------------- LOAD TLE FUNCTION ------------------------------------------------
-// This function will now create its own pop-up for TLE data entry.
-function LoadTLE() {
-    // Remove any other popups first
-    document.querySelectorAll('.custom-popup').forEach(el => el.remove());
-
-    const popup = document.createElement('div');
-    popup.className = 'custom-popup';
-    popup.style.width = '500px'; // Make it wider for TLE lines
-    popup.innerHTML = `
-        <div class="custom-popup-header">
-            <h5 class="modal-title">Load TLE Data</h5>
-            <button type="button" class="btn-close custom-popup-close-btn" aria-label="Close"></button>
-        </div>
-        <div class="custom-popup-body">
-            <div class="mb-2">
-                <label for="tle-name" class="form-label">Satellite Name (Optional)</label>
-                <input type="text" id="tle-name" class="form-control" placeholder="e.g., ISS (ZARYA)">
-            </div>
-            <div class="mb-2">
-                <label for="tle-line1" class="form-label">TLE Line 1</label>
-                <input type="text" id="tle-line1" class="form-control" placeholder="1 25544U 98067A   24194.88263889  .00016717  00000-0  30777-3 0  9990">
-            </div>
-            <div class="mb-3">
-                <label for="tle-line2" class="form-label">TLE Line 2</label>
-                <input type="text" id="tle-line2" class="form-control" placeholder="2 25544  51.6416 252.1266 0006703 130.5360 325.0169 15.49384113135425">
-            </div>
-            <div class="text-end">
-                <button type="button" class="btn btn-primary" id="tle-load-btn">Load Satellite</button>
-            </div>
-        </div>
-    `;
-    document.body.appendChild(popup);
-    makeDraggable(popup); // Make the new popup draggable
-
-    // Attach event listeners for the new popup
-    popup.querySelector('.custom-popup-close-btn').addEventListener('click', () => popup.remove());
-
-    popup.querySelector('#tle-load-btn').addEventListener('click', () => {
-        // This is the original logic from your LoadTLE function
-        const nameInput = document.getElementById('tle-name').value.trim();
-        const line1 = document.getElementById('tle-line1').value.trim();
-        const line2 = document.getElementById('tle-line2').value.trim();
-
-        if (!line1 || !line2) {
-            return showCustomAlert("You must supply both TLE Line 1 and Line 2.");
-        }
-
-        let parsed;
-        try {
-            // Use the globally exposed parseTle function from sgp4.js
-            parsed = window.parseTle(line1, line2);
-        } catch (err) {
-            return showCustomAlert("Invalid TLE format: " + err.message);
-        }
-
-        const satName = nameInput || `TLE_${parsed.satrec.satnum}`;
-
-        // Use viewSimulation to properly clear the scene and set the epoch
-        window.viewSimulation({
-            fileType: 'tle', // Use a specific type for clarity
-            fileName: satName,
-            tleLine1: line1,
-            tleLine2: line2
-        });
-        
-        popup.remove(); // Close the popup on success
-        showCustomAlert(`Loaded TLE for “${satName}”`);
-    });
-}
-    // ------------------------------------- END LOAD TLE FUNCTION ------------------------------------------------
 
 
 // ------------------------------------- TOOLBAR FUNCTIONS ------------------------------------------------
@@ -5278,10 +5400,6 @@ window.updateNadirButtonStates = updateNadirButtonStates;
         document.getElementById('showSavePopupBtn')?.addEventListener('click', function(event) {
             event.preventDefault();
             showSavePopup();
-        });
-        document.getElementById('loadTleBtn')?.addEventListener('click', function(event) {
-            event.preventDefault();
-            LoadTLE();
         });
 
         // Label control event listeners - Dropdown menu

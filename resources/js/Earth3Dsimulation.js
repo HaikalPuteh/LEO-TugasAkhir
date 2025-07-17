@@ -173,7 +173,6 @@ function init3DScene() {
         console.error("Critical: #earth-container not found.");
         return;
     }
-
     // Set up renderer with antialiasing and logarithmic depth buffer for precision
     //renderer = new THREE.WebGLRenderer({ antialias: true, logarithmicDepthBuffer: true });
     renderer = new THREE.WebGLRenderer({ antialias: true});
@@ -758,9 +757,6 @@ class Satellite {
         this.updatePosition(window.totalSimulatedTime, 0);
     }
 
-    /**
-     * Creates the initial meshes for the satellite (sphere and GLB placeholder).
-     */
     createMeshes() {
         const sphereGeometry = new THREE.SphereGeometry(0.005, 16, 16);
         const sphereMaterial = new THREE.MeshBasicMaterial({ color: 0x0000ff });
@@ -2095,10 +2091,18 @@ function updateSatellitePopup() {
         window.activeSatellitePopup = null;
         return;
     }
+
+    // --- FIX STARTS HERE ---
+    // 1. Calculate the altitude in scene units first.
+     const altitudeInSceneUnits = sat.params.semiMajorAxis - SCENE_EARTH_RADIUS;
+    // 2. Convert the scene unit altitude to kilometers.
+     const altitudeKm = (altitudeInSceneUnits * EarthRadius); 
+     const nuRad         = sat.currentTrueAnomaly;  // make sure this is in radians
     // Recompute derived parameters
     const { orbitalPeriod, orbitalVelocity } = calculateDerivedOrbitalParameters(
-        sat.params.semiMajorAxis - SCENE_EARTH_RADIUS,
-        sat.params.eccentricity
+        altitudeKm,
+        sat.params.eccentricity,
+        nuRad
     );
     // Update each span with current data
     element.querySelector('.altitude').textContent = computeAltitude(sat);
@@ -2116,48 +2120,40 @@ function updateSatellitePopup() {
 window.updateSatellitePopup = updateSatellitePopup;
 
 // Add constellation generation support for link budget
+// In Earth3Dsimulation.js
+
 window.generateConstellationFromLinkBudget = function(linkBudgetData) {
-    const constellationName = `${linkBudgetData.name}_Constellation`;
-    
-    // Create a standard 'constellation' data object from the link budget results.
-    // This allows us to reuse the existing and robust constellation creation logic.
+    // A unique name for the constellation file, derived from the analysis name
+    const constellationFileName = `${linkBudgetData.name}_Constellation`;
+
     const constellationParams = {
-        fileName: constellationName,
+        // --- CORRECTED LINE ---
+        fileName: constellationFileName, 
         fileType: 'constellation',
-        constellationType: 'walker', // Link budget defaults to a Walker constellation
+        constellationType: 'walker',
         
-        // --- Orbital parameters derived from the link budget ---
+        // Orbital parameters
         altitude: linkBudgetData.altitude,
         inclination: linkBudgetData.inclination,
         beamwidth: linkBudgetData.beamwidth,
-        eccentricity: 0, // Assume circular orbits for optimal coverage
-        raan: 0,         // Base RAAN; will be spread across planes
+        eccentricity: 0,
+        raan: 0, // Starting RAAN
         argumentOfPerigee: 0,
         trueAnomaly: 0,
         
-        // --- Walker constellation parameters from the link budget ---
+        // Walker parameters
         numPlanes: linkBudgetData.numOrbitalPlanes,
         satellitesPerPlane: linkBudgetData.satsPerPlane,
-        raanSpread: 360, // Spread planes evenly around the Earth
-        phasingFactor: 1, // Standard phasing for Walker Delta patterns
+        raanSpread: linkBudgetData.raanSpread || 360,
+        phasingFactor: linkBudgetData.phasingFactor || 1,
         
-        // --- Timing and metadata ---
+        // Timing
         epoch: new Date().toISOString().slice(0, 16),
         utcTimestamp: Date.now(),
-        satellites: [] // This will be populated by viewSimulation
+        satellites: []
     };
     
-    // Now, call the main simulation function with the newly created constellation data.
     window.viewSimulation(constellationParams);
-    
-    // Save this new constellation object to local storage so it persists
-    window.fileOutputs.set(constellationName, constellationParams);
-    window.addFileToResourceSidebar(constellationName, constellationParams, 'constellation');
-    if (window.saveFilesToLocalStorage) {
-        window.saveFilesToLocalStorage();
-    }
-
-    showCustomAlert(`Generated and visualized '${constellationName}' from link budget analysis.`);
 };
 
 // Initialize the 3D scene and start the animation loop

@@ -157,9 +157,9 @@ function drawCoverageArea2D(sat) {
   if (isNaN(lat) || isNaN(lon)) return;
   
   const circle = d3.geoCircle()
-                   .center([lon, lat])
-                   .radius(radiusDeg)
-                   .precision(0.5);
+  .center([lon, lat])
+  .radius(radiusDeg)
+  .precision(0.5);
 
   try {
     ctx.beginPath();
@@ -207,9 +207,9 @@ function drawGroundStation2D(gs) {
 
     const radiusDeg = radToDeg(centralAng);
     const circle = d3.geoCircle()
-                     .center([lon, lat])
-                     .radius(radiusDeg)
-                     .precision(0.5);
+    .center([lon, lat])
+    .radius(radiusDeg)
+    .precision(0.5);
 
     try {
       ctx.beginPath();

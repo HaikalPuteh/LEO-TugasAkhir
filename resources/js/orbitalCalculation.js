@@ -172,28 +172,29 @@ export function calculateSatellitePositionECI(params, currentMeanAnomaly, curren
  * Calculates additional derived orbital parameters.
  * @param {number} altitude - Altitude in km.
  * @param {number} eccentricity - Eccentricity (dimensionless).
- * @param {number} [earthRadius=EarthRadius] - Earth radius in km (optional override).
+ * @param {number} [EarthRadius] - Earth radius in km.
  * @returns {object} Object with orbitalPeriod (seconds), orbitalVelocity (km/s), semiMajorAxis (km).
  */
-export function calculateDerivedOrbitalParameters(altitude, eccentricity, earthRadius = EarthRadius) {
+export function calculateDerivedOrbitalParameters(altitude, eccentricity,  nuRad = 0) {
     // semiMajorAxis here is in km, as altitude is in km and EarthRadius is in km.
-    const semiMajorAxis_km = earthRadius + altitude;
+    const a_km = EarthRadius + altitude;
     
     // Validate inputs
-    if (semiMajorAxis_km <= 0) {
-        throw new Error(`Invalid semi-major axis: ${semiMajorAxis_km} km`);
+    if (a_km<= 0) {
+        throw new Error(`Invalid semi-major axis: ${a_km} km`);
     }
     if (eccentricity < 0 || eccentricity >= 1) {
         throw new Error(`Invalid eccentricity: ${eccentricity}`);
     }
-    
-    const orbitalPeriodSeconds = 2 * Math.PI * Math.sqrt(Math.pow(semiMajorAxis_km, 3) / MU_EARTH);
-    const orbitalVelocity = Math.sqrt(MU_EARTH / semiMajorAxis_km); // Velocity for circular orbit, or average for elliptical.
+
+    const r_km = (eccentricity === 0)? a_km: a_km * (1 - eccentricity*eccentricity)/ (1 + eccentricity * Math.cos(nuRad));      
+    const orbitalPeriodSeconds = 2 * Math.PI * Math.sqrt(Math.pow(a_km, 3) / MU_EARTH);
+    const orbitalVelocity = Math.sqrt(MU_EARTH * (2/ r_km  - 1/a_km));
 
     return {
         orbitalPeriod: orbitalPeriodSeconds,
         orbitalVelocity: orbitalVelocity,
-        semiMajorAxis: semiMajorAxis_km // Include semi-major axis for convenience
+        //semiMajorAxis: semiMajorAxis_km // Include semi-major axis for convenience
     };
 }
 
